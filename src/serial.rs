@@ -1,6 +1,7 @@
 //! Serial communication
 use self::private::Sealed;
 use crate::clock::Clocks;
+use crate::dma;
 use crate::pac;
 use core::fmt;
 use core::ops::Deref;
@@ -259,10 +260,129 @@ where
         Serial { uart, pins }
     }
 
+    pub fn link_dma(&self, rx: bool, tx: bool) {
+        self.uart.uart_fifo_config_1.modify(|_, w| {
+            w.rx_fifo_th().variant(0);
+            w.tx_fifo_th().variant(0)
+        });
+        self.uart.uart_fifo_config_0.modify(|_, w| {
+            w.uart_dma_rx_en().bit(rx);
+            w.uart_dma_tx_en().bit(tx)
+        });
+    }
+
+    pub fn mask_event(&self, event: Event, mask: bool) {
+        self.uart.uart_int_mask.modify(|_, w| match event {
+            Event::RxFifoError => w.cr_urx_fer_mask().bit(mask),
+            Event::TxFifoError => w.cr_utx_fer_mask().bit(mask),
+            Event::RxParityError => w.cr_urx_pce_mask().bit(mask),
+            Event::RxTimeout => w.cr_urx_rto_mask().bit(mask),
+            Event::RxFifoReady => w.cr_urx_fifo_mask().bit(mask),
+            Event::TxFifoReady => w.cr_utx_fifo_mask().bit(mask),
+            Event::RxTransferEnd => w.cr_urx_end_mask().bit(mask),
+            Event::TxTransferEnd => w.cr_utx_end_mask().bit(mask),
+        });
+    }
+
+    pub fn enable_event(&self, event: Event, enable: bool) {
+        self.uart.uart_int_en.modify(|_, w| match event {
+            Event::RxFifoError => w.cr_urx_fer_en().bit(enable),
+            Event::TxFifoError => w.cr_utx_fer_en().bit(enable),
+            Event::RxParityError => w.cr_urx_pce_en().bit(enable),
+            Event::RxTimeout => w.cr_urx_rto_en().bit(enable),
+            Event::RxFifoReady => w.cr_urx_fifo_en().bit(enable),
+            Event::TxFifoReady => w.cr_utx_fifo_en().bit(enable),
+            Event::RxTransferEnd => w.cr_urx_end_en().bit(enable),
+            Event::TxTransferEnd => w.cr_utx_end_en().bit(enable),
+        })
+    }
+
+    pub fn check_event(&self, event: Event) -> bool {
+        let reader = self.uart.uart_int_sts.read();
+        match event {
+            Event::RxFifoError => reader.urx_fer_int().bit_is_set(),
+            Event::TxFifoError => reader.utx_fer_int().bit_is_set(),
+            Event::RxParityError => reader.urx_pce_int().bit_is_set(),
+            Event::RxTimeout => reader.urx_rto_int().bit_is_set(),
+            Event::RxFifoReady => reader.urx_fifo_int().bit_is_set(),
+            Event::TxFifoReady => reader.utx_fifo_int().bit_is_set(),
+            Event::RxTransferEnd => reader.urx_end_int().bit_is_set(),
+            Event::TxTransferEnd => reader.utx_end_int().bit_is_set(),
+        }
+    }
+
+    pub fn clear_event(&self, event: Event) {
+        self.uart.uart_int_clear.write(|w| match event {
+            Event::RxParityError => w.cr_urx_pce_clr().set_bit(),
+            Event::RxTimeout => w.cr_urx_rto_clr().set_bit(),
+            Event::RxTransferEnd => w.cr_urx_end_clr().set_bit(),
+            Event::TxTransferEnd => w.cr_utx_end_clr().set_bit(),
+            // Other event flags are automatically cleared
+            _ => w,
+        })
+    }
+
+    /// Get the UART RX status
+    pub fn rx_busy(&self) -> bool {
+        self.uart.uart_status.read().sts_urx_bus_busy().bit_is_set()
+    }
+
+    /// Get the UART TX status
+    pub fn tx_busy(&self) -> bool {
+        self.uart.uart_status.read().sts_utx_bus_busy().bit_is_set()
+    }
+
     pub fn free(self) -> (UART, PINS) {
         // todo!
         (self.uart, self.pins)
     }
+}
+
+macro_rules! uart_dma {
+    (
+        $($UART:ident: (rx: $rx:expr, tx: $tx:expr),)+
+    ) => {
+        $(
+            impl<PINS> dma::ReadTarget for Serial<pac::$UART, PINS>
+            {
+                type ReceivedWord = u8;
+
+                fn rx_treq() -> Option<u8> {
+                    Some($rx)
+                }
+
+                fn rx_address_count(&self) -> (u32, u32) {
+                    (self.uart.uart_fifo_rdata.as_ptr() as u32, u32::MAX)
+                }
+
+                fn rx_increment(&self) -> bool {
+                    false
+                }
+            }
+
+            impl<PINS> dma::WriteTarget for Serial<pac::$UART, PINS>
+            {
+                type TransmittedWord = u8;
+
+                fn tx_treq() -> Option<u8> {
+                    Some($tx)
+                }
+
+                fn tx_address_count(&mut self) -> (u32, u32) {
+                    (self.uart.uart_fifo_wdata.as_ptr() as u32, u32::MAX)
+                }
+
+                fn tx_increment(&self) -> bool {
+                    false
+                }
+            }
+        )+
+    }
+}
+
+uart_dma! {
+    UART0: (rx: 0, tx: 1),
+    UART1: (rx: 2, tx: 3),
 }
 
 impl<UART, PINS> embedded_hal_nb::serial::ErrorType for Serial<UART, PINS> {
