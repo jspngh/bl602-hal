@@ -27,6 +27,10 @@
 use riscv::register::mcause;
 
 extern "C" {
+    fn MachineSoft(trap_frame: &mut TrapFrame);
+    fn MachineTimer(trap_frame: &mut TrapFrame);
+    fn MachineExternal(trap_frame: &mut TrapFrame);
+
     fn Gpio(trap_frame: &mut TrapFrame);
     fn TimerCh0(trap_frame: &mut TrapFrame);
     fn TimerCh1(trap_frame: &mut TrapFrame);
@@ -45,6 +49,10 @@ const IRQ_NUM_BASE: u32 = 16;
 const CLIC_HART0_ADDR: u32 = 0x02800000;
 const CLIC_INTIE: u32 = 0x400;
 const CLIC_INTIP: u32 = 0x000;
+
+const MSIP_IRQ: u32 = 3;
+const MTIP_IRQ: u32 = 7;
+const MEIP_IRQ: u32 = 11;
 
 const DMA0_IRQ: u32 = IRQ_NUM_BASE + 15;
 const SPI0_IRQ: u32 = IRQ_NUM_BASE + 27;
@@ -149,6 +157,9 @@ pub unsafe extern "C" fn start_trap_rust_hal(trap_frame: *mut TrapFrame) {
 
             match interrupt {
                 Interrupt::Unknown => _start_trap_rust(trap_frame),
+                Interrupt::MachineSoft => MachineSoft(trap_frame.as_mut().unwrap()),
+                Interrupt::MachineTimer => MachineTimer(trap_frame.as_mut().unwrap()),
+                Interrupt::MachineExternal => MachineExternal(trap_frame.as_mut().unwrap()),
                 Interrupt::Gpio => Gpio(trap_frame.as_mut().unwrap()),
                 Interrupt::TimerCh0 => TimerCh0(trap_frame.as_mut().unwrap()),
                 Interrupt::TimerCh1 => TimerCh1(trap_frame.as_mut().unwrap()),
@@ -168,6 +179,12 @@ pub unsafe extern "C" fn start_trap_rust_hal(trap_frame: *mut TrapFrame) {
 pub enum Interrupt {
     #[doc(hidden)]
     Unknown,
+    /// Machine Software Interrupt
+    MachineSoft,
+    /// Machine Timer Interrupt
+    MachineTimer,
+    /// Machine External Interrupt
+    MachineExternal,
     /// GPIO Interrupt
     Gpio,
     /// Timer Channel 0 Interrupt
@@ -195,6 +212,9 @@ impl Interrupt {
     fn to_irq(&self) -> u32 {
         match &self {
             Interrupt::Unknown => panic!("Unknown interrupt has no irq number"),
+            Interrupt::MachineSoft => MSIP_IRQ,
+            Interrupt::MachineTimer => MTIP_IRQ,
+            Interrupt::MachineExternal => MEIP_IRQ,
             Interrupt::Gpio => GPIO_IRQ,
             Interrupt::TimerCh0 => TIMER_CH0_IRQ,
             Interrupt::TimerCh1 => TIMER_CH1_IRQ,
@@ -210,6 +230,9 @@ impl Interrupt {
 
     fn from(irq: u32) -> Interrupt {
         match irq {
+            MSIP_IRQ => Interrupt::MachineSoft,
+            MTIP_IRQ => Interrupt::MachineTimer,
+            MEIP_IRQ => Interrupt::MachineExternal,
             GPIO_IRQ => Interrupt::Gpio,
             TIMER_CH0_IRQ => Interrupt::TimerCh0,
             TIMER_CH1_IRQ => Interrupt::TimerCh1,
