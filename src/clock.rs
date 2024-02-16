@@ -53,6 +53,7 @@ pub struct Clocks {
     uart_clk: Hertz,
     spi_clk: Hertz,
     i2c_clk: Hertz,
+    rtc_clk: Option<Hertz>,
     _xtal_freq: Option<Hertz>,
     pll_enable: bool,
 }
@@ -64,6 +65,7 @@ impl Clocks {
             uart_clk: Hertz(RC32M),
             spi_clk: Hertz(RC32M),
             i2c_clk: Hertz(RC32M),
+            rtc_clk: None,
             _xtal_freq: None,
             pll_enable: false,
         }
@@ -87,6 +89,10 @@ impl Clocks {
 
     pub const fn i2c_clk(&self) -> Hertz {
         self.i2c_clk
+    }
+
+    pub const fn rtc_clk(&self) -> Option<Hertz> {
+        self.rtc_clk
     }
 }
 
@@ -115,6 +121,7 @@ pub struct Strict {
     target_i2c_clk: Option<NonZeroU32>,
     target_spi_clk: Option<NonZeroU32>,
     target_uart_clk: Option<NonZeroU32>,
+    target_rtc_clk: Option<NonZeroU32>,
     pll_xtal_freq: Option<u32>,
     sysclk: SysclkFreq,
 }
@@ -126,6 +133,7 @@ impl Strict {
             target_i2c_clk: None,
             target_spi_clk: None,
             target_uart_clk: None,
+            target_rtc_clk: None,
             pll_xtal_freq: None,
             sysclk: SysclkFreq::Rc32Mhz,
         }
@@ -154,6 +162,15 @@ impl Strict {
         let freq_hz = freq.into().0;
 
         self.target_uart_clk = NonZeroU32::new(freq_hz);
+
+        self
+    }
+
+    /// Set the desired frequency for the RTC-CLK clock
+    pub fn rtc_clk(mut self, freq: impl Into<Hertz>) -> Self {
+        let freq_hz = freq.into().0;
+
+        self.target_rtc_clk = NonZeroU32::new(freq_hz);
 
         self
     }
@@ -281,11 +298,28 @@ impl Strict {
             .clk_cfg3
             .modify(|_, w| unsafe { w.i2c_clk_en().set_bit().i2c_clk_div().bits(i2c_clk_div) });
 
+        // RTC config
+        let rtc_clk = self.target_rtc_clk.map(|f| f.get());
+        if let Some(rtc_clk) = rtc_clk {
+            let rtc_clk_div = bus_clock.0 / rtc_clk;
+
+            if rtc_clk_div == 0 || rtc_clk_div > 0x20000 {
+                panic!("Unreachable RTC_CLK");
+            }
+
+            let rtc_clk_div = rtc_clk_div - 1;
+            // Write RTC clock divider
+            unsafe { &*pac::GLB::ptr() }
+                .cpu_clk_cfg
+                .modify(|_, w| unsafe { w.cpu_rtc_en().set_bit().cpu_rtc_div().bits(rtc_clk_div) });
+        }
+
         Clocks {
             sysclk: Hertz(sysclk as u32),
             uart_clk: Hertz(uart_clk),
             spi_clk: Hertz(spi_clk),
             i2c_clk: Hertz(i2c_clk),
+            rtc_clk: rtc_clk.map(|f| Hertz(f)),
             _xtal_freq: Some(Hertz(pll_xtal_freq)),
             pll_enable: pll_enabled,
         }
