@@ -35,6 +35,7 @@
 pub use bl602_pac as pac;
 
 pub mod checksum;
+pub mod clic;
 pub mod clock;
 pub mod delay;
 pub mod dma;
