@@ -1,25 +1,23 @@
-/*!
-  # Serial Peripheral Interface
-  To construct the SPI instances, use the `Spi::new` function.
-  The pin parameter is a tuple containing `(miso, mosi, cs, sck)` which should be configured via `into_spi_miso, into_spi_mosi, into_spi_ss, into_spi_sclk`.
-
-  CS is optional - so you can also pass a tuple containing `(miso, mosi, sck)`
-  ## Initialisation example
-  ```rust
-    let miso = parts.pin4.into_spi_miso();
-    let mosi = parts.pin5.into_spi_mosi();
-    let ss = parts.pin2.into_spi_ss();
-    let sclk = parts.pin3.into_spi_sclk();
-
-    let mut spi = hal::spi::Spi::new(
-        dp.SPI,
-        (miso, mosi, ss, sclk),
-        embedded_hal::spi::MODE_0,
-        8_000_000u32.Hz(),
-        clocks,
-    );
-  ```
-*/
+//! # Serial Peripheral Interface
+//! To construct the SPI instances, use the `Spi::new` function.
+//! The pin parameter is a tuple containing `(miso, mosi, cs, sck)` which should be configured via `into_spi_miso, into_spi_mosi, into_spi_ss, into_spi_sclk`.
+//!
+//! CS is optional - so you can also pass a tuple containing `(miso, mosi, sck)`
+//! ## Initialisation example
+//! ```rust
+//!   let miso = parts.pin4.into_spi_miso();
+//!   let mosi = parts.pin5.into_spi_mosi();
+//!   let ss = parts.pin2.into_spi_ss();
+//!   let sclk = parts.pin3.into_spi_sclk();
+//!
+//!   let mut spi = hal::spi::Spi::new(
+//!       dp.SPI,
+//!       (miso, mosi, ss, sclk),
+//!       embedded_hal::spi::MODE_0,
+//!       8_000_000u32.Hz(),
+//!       clocks,
+//!   );
+//! ```
 
 use bl602_pac::Spi as SPI;
 pub use embedded_hal::spi::Mode;

@@ -1,39 +1,43 @@
-/*!
-  # Timer
-  The chip has two 32-bit counters, each of which can independently control and configure its parameters and clock frequency.
-
-  ## Example
-  ```rust
-    use bl602_hal::timer::ClockSource;
-    use embedded_time::{duration::*, rate::*};
-
-    let timers = dp.TIMER.split();
-
-    let ch0 = timers
-        .channel0
-        .set_clock_source(ClockSource::Clock1Khz, 1_000u32.Hz());
-
-    ch0.enable_match0_interrupt();
-    ch0.enable_match1_interrupt();
-    ch0.disable_match2_interrupt();
-
-    ch0.set_preload_value(0.milliseconds());
-    ch0.set_preload(hal::timer::Preload::PreloadMatchComparator1);
-    ch0.set_match0(3_u32.seconds());
-    ch0.set_match1(7_000_000_000_u32.microseconds());
-
-    ch0.enable(); // start timer
-  ```
-  # Units
-  This library uses embedded_time::{duration::*, rate::*} for time units. You can use any supported units as long as they can be cast into Nanoseconds::<u64> for durations, or Hertz for cycles. Time can be cast into other units supported by embedded_time by explicitly typing a variable and calling .into() Note that this will round to the nearest integer in the cast units, potentially losing precision.
-
-  ## Time Casting Example:
-  ```rust
-  use embedded_time::duration::*;
-  // gets the current time in Nanoseconds::<u64> and casts it into milliseconds.
-  let time_in_milliseconds: Milliseconds = watchdog.current_time().into();
-  ```
-*/
+//! # Timer
+//! The chip has two 32-bit counters, each of which can independently control and configure its parameters and clock frequency.
+//!
+//! ## Example
+//! ```rust
+//!   use bl602_hal::timer::ClockSource;
+//!   use embedded_time::{duration::*, rate::*};
+//!
+//!   let timers = dp.TIMER.split();
+//!
+//!   let ch0 = timers
+//!       .channel0
+//!       .set_clock_source(ClockSource::Clock1Khz, 1_000u32.Hz());
+//!
+//!   ch0.enable_match0_interrupt();
+//!   ch0.enable_match1_interrupt();
+//!   ch0.disable_match2_interrupt();
+//!
+//!   ch0.set_preload_value(0.milliseconds());
+//!   ch0.set_preload(hal::timer::Preload::PreloadMatchComparator1);
+//!   ch0.set_match0(3_u32.seconds());
+//!   ch0.set_match1(7_000_000_000_u32.microseconds());
+//!
+//!   ch0.enable(); // start timer
+//! ```
+//! # Units
+//! This library uses embedded_time::{duration::*, rate::*} for time units.
+//! You can use any supported units as long as they can be cast into Nanoseconds::<u64>
+//! for durations, or Hertz for cycles.
+//!
+//! Time can be cast into other units supported by embedded_time by explicitly typing
+//! a variable and calling `.into()`.
+//! Note that this will round to the nearest integer in the cast units, potentially losing precision.
+//!
+//! ## Time Casting Example:
+//! ```rust
+//!   use embedded_time::duration::*;
+//!   // gets the current time in Nanoseconds::<u64> and casts it into milliseconds.
+//!   let time_in_milliseconds: Milliseconds = watchdog.current_time().into();
+//! ```
 
 use crate::{clock::Clocks, pac};
 use bl602_pac::Timer;

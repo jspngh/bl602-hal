@@ -1,4 +1,5 @@
 //! Serial communication
+
 use self::private::Sealed;
 use crate::clock::Clocks;
 use crate::dma;

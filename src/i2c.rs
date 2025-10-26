@@ -1,21 +1,20 @@
-/*!
-  # Inter-Integrated Circuit (I2C) bus
-  To construct the I2C instance use the `I2c::new` function.
-  The pin parameter is a tuple containing `(scl, sda)` which should be configured via `into_i2c_scl` and `into_i2c_sda`.
-
-  ## Initialisation example
-  ```rust
-    let scl = parts.pin4.into_i2c_scl();
-    let sda = parts.pin5.into_i2c_sda();
-
-    let mut i2c = hal::i2c::I2c::i2c(
-        dp.I2C,
-        (scl, sda),
-        100_000u32.Hz(),
-        clocks,
-    );
-    ```
-*/
+//! # Inter-Integrated Circuit (I2C) bus
+//! To construct the I2C instance use the `I2c::new` function.
+//! The pin parameter is a tuple containing `(scl, sda)` which should be configured
+//! via `into_i2c_scl` and `into_i2c_sda`.
+//!
+//! ## Initialisation example
+//! ```rust
+//!   let scl = parts.pin4.into_i2c_scl();
+//!   let sda = parts.pin5.into_i2c_sda();
+//!
+//!   let mut i2c = hal::i2c::I2c::i2c(
+//!       dp.I2C,
+//!       (scl, sda),
+//!       100_000u32.Hz(),
+//!       clocks,
+//!   );
+//! ```
 
 use bl602_pac::I2c as I2C;
 use embedded_hal::i2c as i2cAlpha;

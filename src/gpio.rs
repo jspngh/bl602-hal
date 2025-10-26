@@ -1,4 +1,5 @@
 //! General Purpose Input/Output
+
 use core::marker::PhantomData;
 
 use crate::pac;

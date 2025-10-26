@@ -1,45 +1,52 @@
-/*!
-   # Watchdog
-   The BL602 has a single watchdog timer. It can be configured to run from four different clock sources, which can be divided by 1-256. It has a single counter and comparator, which will determine when the watchdog is triggered. The trigger can either reset the chip or call an interrupt function.
-
-   ## Watchdog Setup and Activation Example:
-   ```rust
-
-   let dp = pac::Peripherals::take().unwrap();
-   let timers = dp.TIMER.split();
-   let mut wd: ConfiguredWatchdog0 = timers
-       .watchdog
-       .set_clock_source(WdtClockSource::Rc32Khz, 125.Hz());
-   wd.set_mode(WatchdogMode::Interrupt);
-   wd.start(10.seconds());
-
-   // When using the watchdog in interrupt mode, you must also enable the IRQ interrupt
-   enable_interrupt(Interrupt::Watchdog);
-   loop{
-       // Do other things in the loop, but make sure to feed the watchdog at least every 10 seconds
-       wd.feed();
-   }
-
-   // ...
-
-   // If you fail to feed the watchdog, the interrupt function `Watchdog()` will be triggered.
-   // Make sure to clear the interrupt in your interrupt function or you'll never escape
-   #[no_mangle]
-   fn Watchdog(trap_frame: &mut TrapFrame){
-       clear_interrupt(Interrupt::Watchdog);
-   }
-
-   ```
- # Units
- This library uses embedded_time::{duration::*, rate::*} for time units. You can use any supported units as long as they can be cast into Nanoseconds::<u64> for durations, or Hertz for cycles. Time can be cast into other units supported by embedded_time by explicitly typing a variable and calling .into() Note that this will round to the nearest integer in the cast units, potentially losing precision.
-
- ## Time Casting Example:
- ```rust
- use embedded_time::duration::*;
- // gets the current time in Nanoseconds::<u64> and casts it into milliseconds.
- let time_in_milliseconds: Milliseconds = watchdog.current_time().into();
- ```
-*/
+//! # Watchdog
+//! The BL602 has a single watchdog timer. It can be configured to run from four different clock sources,
+//! which can be divided by 1-256.
+//!
+//! It has a single counter and comparator, which will determine when the watchdog is triggered.
+//! The trigger can either reset the chip or call an interrupt function.
+//!
+//! ## Watchdog Setup and Activation Example:
+//! ```rust
+//!   let dp = pac::Peripherals::take().unwrap();
+//!   let timers = dp.TIMER.split();
+//!   let mut wd: ConfiguredWatchdog0 = timers
+//!       .watchdog
+//!       .set_clock_source(WdtClockSource::Rc32Khz, 125.Hz());
+//!   wd.set_mode(WatchdogMode::Interrupt);
+//!   wd.start(10.seconds());
+//!
+//!   // When using the watchdog in interrupt mode, you must also enable the IRQ interrupt
+//!   enable_interrupt(Interrupt::Watchdog);
+//!   loop{
+//!       // Do other things in the loop, but make sure to feed the watchdog at least every 10 seconds
+//!       wd.feed();
+//!   }
+//!
+//!   // ...
+//!
+//!   // If you fail to feed the watchdog, the interrupt function `Watchdog()` will be triggered.
+//!   // Make sure to clear the interrupt in your interrupt function or you'll never escape
+//!   #[no_mangle]
+//!   fn Watchdog(trap_frame: &mut TrapFrame){
+//!       clear_interrupt(Interrupt::Watchdog);
+//!   }
+//! ```
+//!
+//! # Units
+//! This library uses embedded_time::{duration::*, rate::*} for time units.
+//! You can use any supported units as long as they can be cast into Nanoseconds::<u64>
+//! for durations, or Hertz for cycles.
+//!
+//! Time can be cast into other units supported by embedded_time by explicitly typing
+//! a variable and calling `.into()`.
+//! Note that this will round to the nearest integer in the cast units, potentially losing precision.
+//!
+//! ## Time Casting Example:
+//! ```rust
+//!   use embedded_time::duration::*;
+//!   // gets the current time in Nanoseconds::<u64> and casts it into milliseconds.
+//!   let time_in_milliseconds: Milliseconds = watchdog.current_time().into();
+//! ```
 
 use crate::{clock::Clocks, pac, timer::TimerWatchdog};
 use embedded_time::{duration::*, rate::*};

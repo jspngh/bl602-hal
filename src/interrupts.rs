@@ -1,28 +1,26 @@
-/*!
-  # Interrupt Management
-  Interrupts can be enabled, disabled and cleared.
-
-  ## Example
-  ```rust
-    enable_interrupt(TimerCh0);
-
-    // ...
-
-    #[no_mangle]
-    fn TimerCh0() {
-        // ..
-        clear_interrupt(TimerCh0);
-    }
-  ```
-
-  ## The following functions can be implemented as interrupt handlers
-  ```rust
-    fn Gpio();
-    fn TimerCh0();
-    fn TimerCh1();
-    fn Watchdog();
-  ```
-*/
+//! # Interrupt Management
+//! Interrupts can be enabled, disabled and cleared.
+//!
+//! ## Example
+//! ```rust
+//!   enable_interrupt(TimerCh0);
+//!
+//!   // ...
+//!
+//!   #[no_mangle]
+//!   fn TimerCh0() {
+//!       // ..
+//!       clear_interrupt(TimerCh0);
+//!   }
+//! ```
+//!
+//! ## The following functions can be implemented as interrupt handlers
+//! ```rust
+//!   fn Gpio();
+//!   fn TimerCh0();
+//!   fn TimerCh1();
+//!   fn Watchdog();
+//! ```
 
 use riscv::register::mcause;
 

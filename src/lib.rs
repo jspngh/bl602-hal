@@ -28,7 +28,6 @@
 //!   "-C", "link-arg=-Thal_defaults.x",
 //! ]
 //! ```
-//!
 
 #![no_std]
 

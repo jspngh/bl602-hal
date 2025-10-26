@@ -8,6 +8,7 @@
 //! The current structure of this module has been taken from
 //! [rp-hal](https://github.com/rp-rs/rp-hal) and could be subject to change in the future
 //! if it needs to be tailored for BL602 specifics (e.g., when implementing the linked list mode).
+
 use crate::typelevel::Sealed;
 use core::marker::PhantomData;
 use embedded_dma::{ReadBuffer, WriteBuffer};

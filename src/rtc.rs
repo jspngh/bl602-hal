@@ -1,12 +1,10 @@
-/*!
-  # Real Time Clock
-  A clock that constantly counts up starting at the time of it's creation.
-
-  ## Initialisation example
-  ```rust
-    let rtc = Rtc::new(dp.HBN);
-  ```
-*/
+//! # Real Time Clock
+//! A clock that constantly counts up starting at the time of it's creation.
+//!
+//! ## Initialisation example
+//! ```rust
+//!   let rtc = Rtc::new(dp.HBN);
+//! ```
 
 use bl602_pac::Hbn as HBN;
 use embedded_time::Clock;
