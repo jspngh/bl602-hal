@@ -72,10 +72,20 @@ pub fn _setup_interrupts() {
         pub fn _start_trap_hal();
     }
 
-    let new_mtvec = _start_trap_hal as usize;
+    // We set the trap vector configuration.
+    // The BL602 uses the SiFive CLIC (see the sifive-interrupt-cookbook),
+    // which has additional *modes* compared to the default riscv spec.
+    //
+    // We set the mode to *CLIC direct mode*, using value `0x2` for the mode field.
+    // However, the `riscv` crate doesn't support these implementation specific modes,
+    // so we have to perform some unsafe trickery.
+    //
+    // Since `Mtvec` is a `#[repr(C)]` struct with only a single usize field, this should be okay.
+    let new_mtvec: riscv::register::mtvec::Mtvec =
+        unsafe { core::mem::transmute(_start_trap_hal as usize | 0x2) };
     unsafe {
         riscv::interrupt::disable();
-        riscv::register::mtvec::write(new_mtvec | 2, riscv::register::mtvec::TrapMode::Direct);
+        riscv::register::mtvec::write(new_mtvec);
     }
 
     // disable all interrupts

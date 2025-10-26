@@ -41,7 +41,7 @@ fn main() -> ! {
     let mut display = Ssd1306::new(interface, DisplaySize128x32, DisplayRotation::Rotate0)
         .into_buffered_graphics_mode();
     display.init().unwrap();
-    display.clear();
+    display.clear_buffer();
     display.flush().unwrap();
 
     let text_style = MonoTextStyleBuilder::new()

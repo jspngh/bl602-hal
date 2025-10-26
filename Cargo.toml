@@ -15,22 +15,22 @@ embedded-hal = "1"
 embedded-hal-nb = "1"
 embedded-time = "0.12.0"
 embedded-dma = "0.2.0"
-riscv = "0.11.0"
-nb = "1.0"
+riscv = "0.15"
+nb = "1.1"
 paste = "1.0"
 void = { default-features = false, version = "1.0.2" }
 
 [dependencies.embedded-hal-zero]
-version = "0.2.5"
+version = "0.2.7"
 package = "embedded-hal"
 features = ["unproven"]
 
 [dev-dependencies]
-riscv-rt = "0.12.1"
-panic-halt = "0.2.0"
-ssd1306 = "0.6.0"
+riscv-rt = "0.16"
+panic-halt = "1.0.0"
+ssd1306 = "0.10.0"
 embedded-graphics = "0.8.1"
-critical-section = "1.1"
+critical-section = "1.2"
 
 [build-dependencies]
 riscv-target = "0.1.2"
