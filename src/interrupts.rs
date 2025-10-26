@@ -39,6 +39,8 @@ extern "C" {
     fn Uart1(trap_frame: &mut TrapFrame);
     fn I2c(trap_frame: &mut TrapFrame);
     fn Pwm(trap_frame: &mut TrapFrame);
+    fn Wifi(trap_frame: &mut TrapFrame);
+    fn WifiIpc(trap_frame: &mut TrapFrame);
 }
 
 // see components\bl602\bl602_std\bl602_std\RISCV\Core\Include\clic.h
@@ -62,6 +64,8 @@ const TIMER_CH0_IRQ: u32 = IRQ_NUM_BASE + 36;
 const TIMER_CH1_IRQ: u32 = IRQ_NUM_BASE + 37;
 const WATCHDOG_IRQ: u32 = IRQ_NUM_BASE + 38;
 const GPIO_IRQ: u32 = IRQ_NUM_BASE + 44;
+const WIFI_IRQ: u32 = IRQ_NUM_BASE + 54;
+const WIFI_IPC_IRQ: u32 = IRQ_NUM_BASE + 63;
 
 #[doc(hidden)]
 #[no_mangle]
@@ -157,29 +161,27 @@ pub unsafe extern "C" fn start_trap_rust_hal(trap_frame: *mut TrapFrame) {
         _start_trap_rust(trap_frame);
     } else {
         let code = cause.code();
-        if code < IRQ_NUM_BASE as usize {
-            _start_trap_rust(trap_frame);
-        } else {
-            let interrupt_number = (code & 0xff) as u32;
-            let interrupt = Interrupt::from(interrupt_number);
+        let interrupt_number = (code & 0xff) as u32;
+        let interrupt = Interrupt::from(interrupt_number);
 
-            match interrupt {
-                Interrupt::Unknown => _start_trap_rust(trap_frame),
-                Interrupt::MachineSoft => MachineSoft(trap_frame.as_mut().unwrap()),
-                Interrupt::MachineTimer => MachineTimer(trap_frame.as_mut().unwrap()),
-                Interrupt::MachineExternal => MachineExternal(trap_frame.as_mut().unwrap()),
-                Interrupt::Gpio => Gpio(trap_frame.as_mut().unwrap()),
-                Interrupt::TimerCh0 => TimerCh0(trap_frame.as_mut().unwrap()),
-                Interrupt::TimerCh1 => TimerCh1(trap_frame.as_mut().unwrap()),
-                Interrupt::Watchdog => Watchdog(trap_frame.as_mut().unwrap()),
-                Interrupt::Dma => Dma(trap_frame.as_mut().unwrap()),
-                Interrupt::Spi => Spi(trap_frame.as_mut().unwrap()),
-                Interrupt::Uart0 => Uart0(trap_frame.as_mut().unwrap()),
-                Interrupt::Uart1 => Uart1(trap_frame.as_mut().unwrap()),
-                Interrupt::I2c => I2c(trap_frame.as_mut().unwrap()),
-                Interrupt::Pwm => Pwm(trap_frame.as_mut().unwrap()),
-            };
-        }
+        match interrupt {
+            Interrupt::Unknown => _start_trap_rust(trap_frame),
+            Interrupt::MachineSoft => MachineSoft(trap_frame.as_mut().unwrap()),
+            Interrupt::MachineTimer => MachineTimer(trap_frame.as_mut().unwrap()),
+            Interrupt::MachineExternal => MachineExternal(trap_frame.as_mut().unwrap()),
+            Interrupt::Gpio => Gpio(trap_frame.as_mut().unwrap()),
+            Interrupt::TimerCh0 => TimerCh0(trap_frame.as_mut().unwrap()),
+            Interrupt::TimerCh1 => TimerCh1(trap_frame.as_mut().unwrap()),
+            Interrupt::Watchdog => Watchdog(trap_frame.as_mut().unwrap()),
+            Interrupt::Dma => Dma(trap_frame.as_mut().unwrap()),
+            Interrupt::Spi => Spi(trap_frame.as_mut().unwrap()),
+            Interrupt::Uart0 => Uart0(trap_frame.as_mut().unwrap()),
+            Interrupt::Uart1 => Uart1(trap_frame.as_mut().unwrap()),
+            Interrupt::I2c => I2c(trap_frame.as_mut().unwrap()),
+            Interrupt::Pwm => Pwm(trap_frame.as_mut().unwrap()),
+            Interrupt::Wifi => Wifi(trap_frame.as_mut().unwrap()),
+            Interrupt::WifiIpc => WifiIpc(trap_frame.as_mut().unwrap()),
+        };
     }
 }
 
@@ -214,6 +216,10 @@ pub enum Interrupt {
     I2c,
     /// PWM Interrupt
     Pwm,
+    /// Wifi to CPU Interrupt
+    Wifi,
+    /// Wifi IPC Public Interrupt
+    WifiIpc,
 }
 
 impl Interrupt {
@@ -233,6 +239,8 @@ impl Interrupt {
             Interrupt::Uart1 => UART1_IRQ,
             Interrupt::I2c => I2C0_IRQ,
             Interrupt::Pwm => PWM_IRQ,
+            Interrupt::Wifi => WIFI_IRQ,
+            Interrupt::WifiIpc => WIFI_IPC_IRQ,
         }
     }
 
@@ -251,6 +259,8 @@ impl Interrupt {
             UART1_IRQ => Interrupt::Uart1,
             I2C0_IRQ => Interrupt::I2c,
             PWM_IRQ => Interrupt::Pwm,
+            WIFI_IRQ => Interrupt::Wifi,
+            WIFI_IPC_IRQ => Interrupt::WifiIpc,
             _ => Interrupt::Unknown,
         }
     }

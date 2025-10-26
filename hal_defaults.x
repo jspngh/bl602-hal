@@ -8,3 +8,5 @@ PROVIDE(Uart0 = DefaultHandler);
 PROVIDE(Uart1 = DefaultHandler);
 PROVIDE(I2c = DefaultHandler);
 PROVIDE(Pwm = DefaultHandler);
+PROVIDE(Wifi = DefaultHandler);
+PROVIDE(WifiIpc = DefaultHandler);
