@@ -23,7 +23,7 @@ use ssd1306::{rotation::DisplayRotation, size::DisplaySize128x32, I2CDisplayInte
 #[riscv_rt::entry]
 fn main() -> ! {
     let dp = pac::Peripherals::take().unwrap();
-    let mut parts = dp.GLB.split();
+    let mut parts = dp.glb.split();
 
     // Set up all the clocks we need
     let clocks = Strict::new()
@@ -35,7 +35,7 @@ fn main() -> ! {
 
     let scl = parts.pin4.into_i2c_scl();
     let sda = parts.pin5.into_i2c_sda();
-    let i2c = hal::i2c::I2c::new(dp.I2C, (scl, sda), 100_000u32.Hz(), clocks);
+    let i2c = hal::i2c::I2c::new(dp.i2c, (scl, sda), 100_000u32.Hz(), clocks);
 
     let interface = I2CDisplayInterface::new(i2c);
     let mut display = Ssd1306::new(interface, DisplaySize128x32, DisplayRotation::Rotate0)

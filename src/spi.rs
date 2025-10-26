@@ -21,7 +21,7 @@
   ```
 */
 
-use bl602_pac::SPI;
+use bl602_pac::Spi as SPI;
 pub use embedded_hal::spi::Mode;
 use embedded_hal_nb;
 use embedded_hal_zero::spi::FullDuplex as FullDuplexZero;
@@ -80,29 +80,29 @@ pub trait SclkPin<SPI>: private::Sealed {}
 /// Spi pins
 pub trait Pins<SPI>: private::Sealed {}
 
-impl<MODE> MisoPin<pac::SPI> for crate::gpio::Pin0<MODE> {}
-impl<MODE> MosiPin<pac::SPI> for crate::gpio::Pin1<MODE> {}
-impl<MODE> SsPin<pac::SPI> for crate::gpio::Pin2<MODE> {}
-impl<MODE> SclkPin<pac::SPI> for crate::gpio::Pin3<MODE> {}
-impl<MODE> MisoPin<pac::SPI> for crate::gpio::Pin4<MODE> {}
-impl<MODE> MosiPin<pac::SPI> for crate::gpio::Pin5<MODE> {}
-impl<MODE> SsPin<pac::SPI> for crate::gpio::Pin6<MODE> {}
-impl<MODE> SclkPin<pac::SPI> for crate::gpio::Pin7<MODE> {}
-impl<MODE> MisoPin<pac::SPI> for crate::gpio::Pin8<MODE> {}
-impl<MODE> MosiPin<pac::SPI> for crate::gpio::Pin9<MODE> {}
-impl<MODE> SsPin<pac::SPI> for crate::gpio::Pin10<MODE> {}
-impl<MODE> SclkPin<pac::SPI> for crate::gpio::Pin11<MODE> {}
-impl<MODE> MisoPin<pac::SPI> for crate::gpio::Pin12<MODE> {}
-impl<MODE> MosiPin<pac::SPI> for crate::gpio::Pin13<MODE> {}
-impl<MODE> SsPin<pac::SPI> for crate::gpio::Pin14<MODE> {}
-impl<MODE> SclkPin<pac::SPI> for crate::gpio::Pin15<MODE> {}
-impl<MODE> MisoPin<pac::SPI> for crate::gpio::Pin16<MODE> {}
-impl<MODE> MosiPin<pac::SPI> for crate::gpio::Pin17<MODE> {}
-impl<MODE> SsPin<pac::SPI> for crate::gpio::Pin18<MODE> {}
-impl<MODE> SclkPin<pac::SPI> for crate::gpio::Pin19<MODE> {}
-impl<MODE> MisoPin<pac::SPI> for crate::gpio::Pin20<MODE> {}
-impl<MODE> MosiPin<pac::SPI> for crate::gpio::Pin21<MODE> {}
-impl<MODE> SsPin<pac::SPI> for crate::gpio::Pin22<MODE> {}
+impl<MODE> MisoPin<pac::Spi> for crate::gpio::Pin0<MODE> {}
+impl<MODE> MosiPin<pac::Spi> for crate::gpio::Pin1<MODE> {}
+impl<MODE> SsPin<pac::Spi> for crate::gpio::Pin2<MODE> {}
+impl<MODE> SclkPin<pac::Spi> for crate::gpio::Pin3<MODE> {}
+impl<MODE> MisoPin<pac::Spi> for crate::gpio::Pin4<MODE> {}
+impl<MODE> MosiPin<pac::Spi> for crate::gpio::Pin5<MODE> {}
+impl<MODE> SsPin<pac::Spi> for crate::gpio::Pin6<MODE> {}
+impl<MODE> SclkPin<pac::Spi> for crate::gpio::Pin7<MODE> {}
+impl<MODE> MisoPin<pac::Spi> for crate::gpio::Pin8<MODE> {}
+impl<MODE> MosiPin<pac::Spi> for crate::gpio::Pin9<MODE> {}
+impl<MODE> SsPin<pac::Spi> for crate::gpio::Pin10<MODE> {}
+impl<MODE> SclkPin<pac::Spi> for crate::gpio::Pin11<MODE> {}
+impl<MODE> MisoPin<pac::Spi> for crate::gpio::Pin12<MODE> {}
+impl<MODE> MosiPin<pac::Spi> for crate::gpio::Pin13<MODE> {}
+impl<MODE> SsPin<pac::Spi> for crate::gpio::Pin14<MODE> {}
+impl<MODE> SclkPin<pac::Spi> for crate::gpio::Pin15<MODE> {}
+impl<MODE> MisoPin<pac::Spi> for crate::gpio::Pin16<MODE> {}
+impl<MODE> MosiPin<pac::Spi> for crate::gpio::Pin17<MODE> {}
+impl<MODE> SsPin<pac::Spi> for crate::gpio::Pin18<MODE> {}
+impl<MODE> SclkPin<pac::Spi> for crate::gpio::Pin19<MODE> {}
+impl<MODE> MisoPin<pac::Spi> for crate::gpio::Pin20<MODE> {}
+impl<MODE> MosiPin<pac::Spi> for crate::gpio::Pin21<MODE> {}
+impl<MODE> SsPin<pac::Spi> for crate::gpio::Pin22<MODE> {}
 
 impl<MISO, MOSI, SS, SCLK> Pins<SPI> for (MISO, MOSI, SS, SCLK)
 where
@@ -123,7 +123,7 @@ where
 
 // Prevent users from implementing the SPI pin traits
 mod private {
-    use bl602_pac::SPI;
+    use bl602_pac::Spi as SPI;
 
     use crate::gpio;
 
@@ -178,9 +178,9 @@ pub struct Spi<SPI, PINS> {
     pins: PINS,
 }
 
-impl<PINS> Spi<pac::SPI, PINS>
+impl<PINS> Spi<pac::Spi, PINS>
 where
-    PINS: Pins<pac::SPI>,
+    PINS: Pins<pac::Spi>,
 {
     /**
       Constructs an SPI instance in 8bit dataframe mode.
@@ -191,11 +191,11 @@ where
     */
     pub fn new(spi: SPI, pins: PINS, mode: Mode, freq: Hertz<u32>, clocks: Clocks) -> Self
     where
-        PINS: Pins<pac::SPI>,
+        PINS: Pins<pac::Spi>,
     {
-        let glb = unsafe { &*pac::GLB::ptr() };
+        let glb = unsafe { &*pac::Glb::ptr() };
 
-        glb.glb_parm.modify(|_r, w| {
+        glb.glb_parm().modify(|_r, w| {
             w.reg_spi_0_master_mode()
                 .set_bit()
                 .reg_spi_0_swap()
@@ -210,7 +210,7 @@ where
         }
 
         let len = (len - 1) as u8;
-        spi.spi_prd_0.modify(|_r, w| unsafe {
+        spi.spi_prd_0().modify(|_r, w| unsafe {
             w.cr_spi_prd_s()
                 .bits(len)
                 .cr_spi_prd_p()
@@ -221,10 +221,10 @@ where
                 .bits(len)
         });
 
-        spi.spi_prd_1
+        spi.spi_prd_1()
             .modify(|_r, w| unsafe { w.cr_spi_prd_i().bits(len) });
 
-        spi.spi_config.modify(|_, w| unsafe {
+        spi.spi_config().modify(|_, w| unsafe {
             w.cr_spi_sclk_pol()
                 .bit(match mode.polarity {
                     embedded_hal::spi::Polarity::IdleLow => false,
@@ -248,7 +248,7 @@ where
         Spi { spi, pins }
     }
 
-    pub fn release(self) -> (pac::SPI, PINS) {
+    pub fn release(self) -> (pac::Spi, PINS) {
         (self.spi, self.pins)
     }
 
@@ -257,57 +257,57 @@ where
         match format {
             SpiBitFormat::LsbFirst => self
                 .spi
-                .spi_config
+                .spi_config()
                 .modify(|_, w| w.cr_spi_bit_inv().set_bit()),
             SpiBitFormat::MsbFirst => self
                 .spi
-                .spi_config
+                .spi_config()
                 .modify(|_, w| w.cr_spi_bit_inv().clear_bit()),
-        }
+        };
     }
 
     /// Clear FIFOs
     pub fn clear_fifo(&mut self) {
         self.spi
-            .spi_fifo_config_0
+            .spi_fifo_config_0()
             .write(|w| w.rx_fifo_clr().set_bit().tx_fifo_clr().set_bit());
     }
 }
 
-impl<PINS> embedded_hal_nb::spi::ErrorType for Spi<pac::SPI, PINS> {
+impl<PINS> embedded_hal_nb::spi::ErrorType for Spi<pac::Spi, PINS> {
     type Error = Error;
 }
 
-impl<PINS> embedded_hal_nb::spi::FullDuplex<u8> for Spi<pac::SPI, PINS>
+impl<PINS> embedded_hal_nb::spi::FullDuplex<u8> for Spi<pac::Spi, PINS>
 where
-    PINS: Pins<pac::SPI>,
+    PINS: Pins<pac::Spi>,
 {
     fn read(&mut self) -> nb::Result<u8, Error> {
-        let spi_fifo_config_0 = self.spi.spi_fifo_config_0.read();
+        let spi_fifo_config_0 = self.spi.spi_fifo_config_0().read();
 
         if spi_fifo_config_0.rx_fifo_overflow().bit_is_set() {
             Err(nb::Error::Other(Error::RxOverflow))
         } else if spi_fifo_config_0.rx_fifo_underflow().bit_is_set() {
             Err(nb::Error::Other(Error::RxUnderflow))
-        } else if self.spi.spi_fifo_config_1.read().rx_fifo_cnt().bits() == 0 {
+        } else if self.spi.spi_fifo_config_1().read().rx_fifo_cnt().bits() == 0 {
             Err(nb::Error::WouldBlock)
         } else {
-            Ok((self.spi.spi_fifo_rdata.read().bits() & 0xff) as u8)
+            Ok((self.spi.spi_fifo_rdata().read().bits() & 0xff) as u8)
         }
     }
 
     fn write(&mut self, data: u8) -> nb::Result<(), Self::Error> {
-        let spi_fifo_config_0 = self.spi.spi_fifo_config_0.read();
+        let spi_fifo_config_0 = self.spi.spi_fifo_config_0().read();
 
         if spi_fifo_config_0.tx_fifo_overflow().bit_is_set() {
             Err(nb::Error::Other(Error::TxOverflow))
         } else if spi_fifo_config_0.tx_fifo_underflow().bit_is_set() {
             Err(nb::Error::Other(Error::TxUnderflow))
-        } else if self.spi.spi_fifo_config_1.read().tx_fifo_cnt().bits() == 0 {
+        } else if self.spi.spi_fifo_config_1().read().tx_fifo_cnt().bits() == 0 {
             Err(nb::Error::WouldBlock)
         } else {
             self.spi
-                .spi_fifo_wdata
+                .spi_fifo_wdata()
                 .write(|w| unsafe { w.bits(data as u32) });
 
             Ok(())
@@ -315,9 +315,9 @@ where
     }
 }
 
-impl<PINS> FullDuplexZero<u8> for Spi<pac::SPI, PINS>
+impl<PINS> FullDuplexZero<u8> for Spi<pac::Spi, PINS>
 where
-    PINS: Pins<pac::SPI>,
+    PINS: Pins<pac::Spi>,
 {
     type Error = Error;
 
@@ -332,17 +332,17 @@ where
 
 //TODO: Default marker traits are removed from e-h 1.0 alpha 5, must re-implement manually.
 // We can still use them for e-h 0.2 though, so that makes life easy
-impl<PINS> embedded_hal_zero::blocking::spi::transfer::Default<u8> for Spi<pac::SPI, PINS> where
-    PINS: Pins<pac::SPI>
+impl<PINS> embedded_hal_zero::blocking::spi::transfer::Default<u8> for Spi<pac::Spi, PINS> where
+    PINS: Pins<pac::Spi>
 {
 }
 
-impl<PINS> embedded_hal_zero::blocking::spi::write::Default<u8> for Spi<pac::SPI, PINS> where
-    PINS: Pins<pac::SPI>
+impl<PINS> embedded_hal_zero::blocking::spi::write::Default<u8> for Spi<pac::Spi, PINS> where
+    PINS: Pins<pac::Spi>
 {
 }
 
-impl<PINS> embedded_hal_zero::blocking::spi::write_iter::Default<u8> for Spi<pac::SPI, PINS> where
-    PINS: Pins<pac::SPI>
+impl<PINS> embedded_hal_zero::blocking::spi::write_iter::Default<u8> for Spi<pac::Spi, PINS> where
+    PINS: Pins<pac::Spi>
 {
 }

@@ -22,19 +22,19 @@ pub trait DMAExt: Sealed {
 }
 
 pub struct DMA {
-    dma: crate::pac::DMA,
+    dma: crate::pac::Dma,
 }
 
 impl DMA {
     /// Enable the DMA engine and construct a new instance
-    pub fn new(dma: crate::pac::DMA) -> Self {
-        dma.dma_top_config.modify(|_, w| w.e().set_bit());
+    pub fn new(dma: crate::pac::Dma) -> Self {
+        dma.dma_top_config().modify(|_, w| w.e().set_bit());
         Self { dma }
     }
 
     /// Disable the DMA engine and free the underlying object
-    pub fn free(self) -> crate::pac::DMA {
-        self.dma.dma_top_config.modify(|_, w| w.e().clear_bit());
+    pub fn free(self) -> crate::pac::Dma {
+        self.dma.dma_top_config().modify(|_, w| w.e().clear_bit());
         self.dma
     }
 }
@@ -53,8 +53,8 @@ pub trait ChannelIndex: Sealed {
 }
 
 trait ChannelRegs {
-    unsafe fn ptr() -> *const crate::pac::dma::CH;
-    fn regs(&self) -> &crate::pac::dma::CH;
+    unsafe fn ptr() -> *const crate::pac::dma::Ch;
+    fn regs(&self) -> &crate::pac::dma::Ch;
 }
 
 macro_rules! channels {
@@ -92,11 +92,11 @@ macro_rules! channels {
             impl Sealed for $CHX {}
 
             impl ChannelRegs for Channel<$CHX> {
-                unsafe fn ptr() -> *const crate::pac::dma::CH {
-                    &(*crate::pac::DMA::ptr()).$chX as *const _
+                unsafe fn ptr() -> *const crate::pac::dma::Ch {
+                    (*crate::pac::Dma::ptr()).ch($x) as *const _
                 }
 
-                fn regs(&self) -> &crate::pac::dma::CH {
+                fn regs(&self) -> &crate::pac::dma::Ch {
                     unsafe { &*Self::ptr() }
                 }
             }

@@ -26,7 +26,7 @@ fn get_gpio5() -> &'static mut hal::gpio::pin::Pin5<hal::gpio::Output<hal::gpio:
 #[riscv_rt::entry]
 fn main() -> ! {
     let dp = pac::Peripherals::take().unwrap();
-    let parts = dp.GLB.split();
+    let parts = dp.glb.split();
 
     let mut gpio3 = parts.pin3.into_pull_down_input();
     let mut gpio5 = parts.pin5.into_pull_down_output();
@@ -47,9 +47,7 @@ fn main() -> ! {
     enable_interrupt(Interrupt::Gpio);
 
     loop {
-        unsafe {
-            riscv::asm::wfi();
-        }
+        riscv::asm::wfi();
     }
 }
 
@@ -62,13 +60,11 @@ fn Gpio(_trap_frame: &mut TrapFrame) {
     get_gpio3().disable_interrupt();
     get_gpio3().clear_interrupt_pending_bit();
 
-    let is_on = get_gpio5().is_set_high();
-    if let Ok(res) = is_on {
-        if res {
-            get_gpio5().set_low().unwrap();
-        } else {
-            get_gpio5().set_high().unwrap();
-        }
+    let Ok(res) = get_gpio5().is_set_high();
+    if res {
+        get_gpio5().set_low().unwrap();
+    } else {
+        get_gpio5().set_high().unwrap();
     }
 
     get_gpio3().enable_interrupt();

@@ -107,29 +107,29 @@ pub struct ConfiguredWatchdog0 {
 
 /// This sends the access codes so that we can write values to the WDT registers.
 fn send_access_codes() {
-    let timer = unsafe { &*pac::TIMER::ptr() };
+    let timer = unsafe { &*pac::Timer::ptr() };
     timer
-        .wfar
+        .wfar()
         .write(|w| unsafe { w.wfar().bits(WatchdogKeys::Wfar.get_key()) });
     timer
-        .wsar
+        .wsar()
         .write(|w| unsafe { w.wsar().bits(WatchdogKeys::Wsar.get_key()) });
 }
 
 impl ConfiguredWatchdog0 {
     /// Enable the watchdog counter
     pub fn enable(&self) {
-        let timer = unsafe { &*pac::TIMER::ptr() };
+        let timer = unsafe { &*pac::Timer::ptr() };
         send_access_codes();
-        timer.wcr.write(|w| w.wcr().set_bit());
+        timer.wcr().write(|w| w.wcr().set_bit());
         send_access_codes();
-        timer.wmer.modify(|_r, w| w.we().set_bit());
+        timer.wmer().modify(|_r, w| w.we().set_bit());
     }
 
     /// Read the WMER register's WE bit to see if the WDT is enabled or disabled.
     pub fn is_enabled(&self) -> WatchdogMode {
-        let timer = unsafe { &*pac::TIMER::ptr() };
-        match timer.wmer.read().we().bit() {
+        let timer = unsafe { &*pac::Timer::ptr() };
+        match timer.wmer().read().we().bit() {
             true => WatchdogMode::Reset,
             false => WatchdogMode::Interrupt,
         }
@@ -140,51 +140,51 @@ impl ConfiguredWatchdog0 {
     pub fn set_timeout(&self, time: impl Into<Nanoseconds<u64>>) {
         let time: Nanoseconds<u64> = time.into();
         let ticks = (self.clock.0 as u64 * time.integer() / 1_000_000_000_u64) as u16;
-        let timer = unsafe { &*pac::TIMER::ptr() };
+        let timer = unsafe { &*pac::Timer::ptr() };
         send_access_codes();
-        timer.wmr.write(|w| unsafe { w.wmr().bits(ticks) });
+        timer.wmr().write(|w| unsafe { w.wmr().bits(ticks) });
     }
 
     //noinspection RsSelfConvention
     /// Determine whether the watchdog will reset the board, or trigger an interrupt
     pub fn set_mode(&self, mode: WatchdogMode) {
-        let timer = unsafe { &*pac::TIMER::ptr() };
+        let timer = unsafe { &*pac::Timer::ptr() };
         match mode {
             WatchdogMode::Interrupt => {
                 send_access_codes();
-                timer.wmer.write(|w| w.wrie().clear_bit());
+                timer.wmer().write(|w| w.wrie().clear_bit());
             }
             WatchdogMode::Reset => {
                 send_access_codes();
-                timer.wmer.write(|w| w.wrie().set_bit());
+                timer.wmer().write(|w| w.wrie().set_bit());
             }
         }
     }
 
     /// Check the value of the watchdog reset register (WTS) to see if a reset has occurred
     pub fn has_watchdog_reset_occurred(&self) -> bool {
-        let timer = unsafe { &*pac::TIMER::ptr() };
-        timer.wsr.read().wts().bit_is_set()
+        let timer = unsafe { &*pac::Timer::ptr() };
+        timer.wsr().read().wts().bit_is_set()
     }
 
     /// Clear the watchdog reset register (WTS)
     pub fn clear_wts(&self) {
-        let timer = unsafe { &*pac::TIMER::ptr() };
+        let timer = unsafe { &*pac::Timer::ptr() };
         send_access_codes();
-        timer.wsr.write(|w| w.wts().set_bit());
+        timer.wsr().write(|w| w.wts().set_bit());
     }
 
     /// clears the watchdog interrupt once it has been set by the WDT activating in Interrupt mode
     pub fn clear_interrupt(&self) {
-        let timer = unsafe { &*pac::TIMER::ptr() };
+        let timer = unsafe { &*pac::Timer::ptr() };
         send_access_codes();
-        timer.wicr.write(|w| w.wiclr().set_bit());
+        timer.wicr().write(|w| w.wiclr().set_bit());
     }
 
     /// Gets the value in ticks the match register is currently set to
     pub fn get_match_ticks(&self) -> u16 {
-        let timer = unsafe { &*pac::TIMER::ptr() };
-        timer.wmr.read().wmr().bits()
+        let timer = unsafe { &*pac::Timer::ptr() };
+        timer.wmr().read().wmr().bits()
     }
 
     /// Get the current value of the watchdog timer in nanoseconds
@@ -196,8 +196,8 @@ impl ConfiguredWatchdog0 {
 
     /// Get the current value in ticks of the watchdog timer
     pub fn get_current_ticks(&self) -> u16 {
-        let timer = unsafe { &*pac::TIMER::ptr() };
-        timer.wvr.read().wvr().bits()
+        let timer = unsafe { &*pac::Timer::ptr() };
+        timer.wvr().read().wvr().bits()
     }
 
     /// Get the current value of the watchdog timer in nanoseconds
@@ -209,14 +209,14 @@ impl ConfiguredWatchdog0 {
 
     /// Read the TCCR register containing the CS_WDT bits that select the clock source
     pub fn get_cs_wdt(&self) -> u8 {
-        let timer = unsafe { &*pac::TIMER::ptr() };
-        timer.tccr.read().cs_wdt().bits()
+        let timer = unsafe { &*pac::Timer::ptr() };
+        timer.tccr().read().cs_wdt().bits()
     }
 
     /// Read the WMER register's WRIE bit to see if the WDT is in Reset or Interrupt mode.
     pub fn get_wrie(&self) -> WatchdogMode {
-        let timer = unsafe { &*pac::TIMER::ptr() };
-        match timer.wmer.read().wrie().bit() {
+        let timer = unsafe { &*pac::Timer::ptr() };
+        match timer.wmer().read().wrie().bit() {
             true => WatchdogMode::Reset,
             false => WatchdogMode::Interrupt,
         }
@@ -224,8 +224,8 @@ impl ConfiguredWatchdog0 {
 
     /// Read the TCDR register's WCDR bits to see the clock division value.
     pub fn get_wcdr(&self) -> u8 {
-        let timer = unsafe { &*pac::TIMER::ptr() };
-        timer.tcdr.read().wcdr().bits()
+        let timer = unsafe { &*pac::Timer::ptr() };
+        timer.tcdr().read().wcdr().bits()
     }
 }
 
@@ -233,17 +233,17 @@ impl embedded_hal_zero::watchdog::Watchdog for ConfiguredWatchdog0 {
     /// This feeds the watchdog by resetting its counter value to 0.
     /// WCR register is write-only, no need to preserve register contents
     fn feed(&mut self) {
-        let timer = unsafe { &*pac::TIMER::ptr() };
+        let timer = unsafe { &*pac::Timer::ptr() };
         send_access_codes();
-        timer.wcr.write(|w| w.wcr().set_bit());
+        timer.wcr().write(|w| w.wcr().set_bit());
     }
 }
 
 impl embedded_hal_zero::watchdog::WatchdogDisable for ConfiguredWatchdog0 {
     fn disable(&mut self) {
-        let timer = unsafe { &*pac::TIMER::ptr() };
+        let timer = unsafe { &*pac::Timer::ptr() };
         send_access_codes();
-        timer.wmer.write(|w| w.we().clear_bit());
+        timer.wmer().write(|w| w.we().clear_bit());
     }
 }
 
@@ -285,9 +285,9 @@ impl TimerWatchdog {
         target_clock: impl Into<Hertz>,
     ) -> ConfiguredWatchdog0 {
         let target_clock = target_clock.into();
-        let timer = unsafe { &*pac::TIMER::ptr() };
+        let timer = unsafe { &*pac::Timer::ptr() };
         timer
-            .tccr
+            .tccr()
             .modify(|_r, w| unsafe { w.cs_wdt().bits(source.tccr_value()) });
         let divider = source.hertz().0 / target_clock.0;
 
@@ -296,12 +296,12 @@ impl TimerWatchdog {
         }
 
         timer
-            .tcdr
+            .tcdr()
             .modify(|_r, w| unsafe { w.wcdr().bits((divider - 1) as u8) });
 
         //clear interrupt bit when initializing:
         send_access_codes();
-        timer.wicr.write(|w| w.wiclr().clear_bit());
+        timer.wicr().write(|w| w.wiclr().clear_bit());
 
         ConfiguredWatchdog0 {
             clock: target_clock,

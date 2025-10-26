@@ -2,7 +2,7 @@
 #![no_main]
 
 use bl602_hal as hal;
-use embedded_hal::delay::blocking::DelayMs;
+use embedded_hal::delay::DelayNs;
 use hal::{
     clock::{Strict, SysclkFreq, UART_PLL_FREQ},
     dma::single_buffer,
@@ -17,7 +17,7 @@ use panic_halt as _;
 #[riscv_rt::entry]
 fn main() -> ! {
     let dp = pac::Peripherals::take().unwrap();
-    let mut parts = dp.GLB.split();
+    let mut parts = dp.glb.split();
 
     // Set up all the clocks we need
     let clocks = Strict::new()
@@ -35,14 +35,14 @@ fn main() -> ! {
 
     // Configure our UART to 115200Baud, and use the pins we configured above
     let mut serial = Serial::new(
-        dp.UART0,
+        dp.uart0,
         Config::default().baudrate(115_200.Bd()),
         ((pin16, mux0), (pin7, mux7)),
         clocks,
     );
     serial.link_dma(false, true);
 
-    let dma = DMA::new(dp.DMA);
+    let dma = DMA::new(dp.dma);
     let channels = dma.split();
     let mut channel = channels.ch0;
 
@@ -58,7 +58,6 @@ fn main() -> ! {
         // Blocking wait, this can also be done by listening for the *transfer complete* interrupt.
         (channel, tx_buf, serial) = dma_transfer.wait();
 
-        d.delay_ms(1000).unwrap();
+        d.delay_ms(1000);
     }
 }
-

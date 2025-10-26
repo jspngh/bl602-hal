@@ -10,7 +10,7 @@ repository = "https://github.com/sipeed/bl602-hal"
 description = "HAL for the bl602 microcontroller"
 
 [dependencies]
-bl602-pac = { git = "https://github.com/sipeed/bl602-pac", branch = "main" }
+bl602-pac = { path = "../bl602-pac" }
 embedded-hal = "1"
 embedded-hal-nb = "1"
 embedded-time = "0.12.0"

@@ -189,7 +189,7 @@ where
             ans as u16
         };
 
-        uart.uart_bit_prd.write(|w| unsafe {
+        uart.uart_bit_prd().write(|w| unsafe {
             w.cr_urx_bit_prd()
                 .bits(divisor - 1)
                 .cr_utx_bit_prd()
@@ -202,7 +202,7 @@ where
             Order::MsbFirst => true,
         };
 
-        uart.data_config
+        uart.data_config()
             .write(|w| w.cr_uart_bit_inv().bit(order_cfg));
 
         // UART TX config
@@ -224,7 +224,7 @@ where
             Parity::ParityOdd => (true, true),   // odd => 1
         };
 
-        uart.utx_config.write(|w| unsafe {
+        uart.utx_config().write(|w| unsafe {
             w.cr_utx_prt_en()
                 .bit(parity_enable)
                 .cr_utx_prt_sel()
@@ -242,7 +242,7 @@ where
         });
 
         // UART RX config
-        uart.urx_config.write(|w| unsafe {
+        uart.urx_config().write(|w| unsafe {
             w.cr_urx_prt_en()
                 .bit(parity_enable)
                 .cr_urx_prt_sel()
@@ -261,18 +261,18 @@ where
     }
 
     pub fn link_dma(&self, rx: bool, tx: bool) {
-        self.uart.uart_fifo_config_1.modify(|_, w| {
-            w.rx_fifo_th().variant(0);
-            w.tx_fifo_th().variant(0)
+        self.uart.uart_fifo_config_1().modify(|_, w| unsafe {
+            w.rx_fifo_th().bits(0);
+            w.tx_fifo_th().bits(0)
         });
-        self.uart.uart_fifo_config_0.modify(|_, w| {
+        self.uart.uart_fifo_config_0().modify(|_, w| {
             w.uart_dma_rx_en().bit(rx);
             w.uart_dma_tx_en().bit(tx)
         });
     }
 
     pub fn mask_event(&self, event: Event, mask: bool) {
-        self.uart.uart_int_mask.modify(|_, w| match event {
+        self.uart.uart_int_mask().modify(|_, w| match event {
             Event::RxFifoError => w.cr_urx_fer_mask().bit(mask),
             Event::TxFifoError => w.cr_utx_fer_mask().bit(mask),
             Event::RxParityError => w.cr_urx_pce_mask().bit(mask),
@@ -285,7 +285,7 @@ where
     }
 
     pub fn enable_event(&self, event: Event, enable: bool) {
-        self.uart.uart_int_en.modify(|_, w| match event {
+        self.uart.uart_int_en().modify(|_, w| match event {
             Event::RxFifoError => w.cr_urx_fer_en().bit(enable),
             Event::TxFifoError => w.cr_utx_fer_en().bit(enable),
             Event::RxParityError => w.cr_urx_pce_en().bit(enable),
@@ -294,11 +294,11 @@ where
             Event::TxFifoReady => w.cr_utx_fifo_en().bit(enable),
             Event::RxTransferEnd => w.cr_urx_end_en().bit(enable),
             Event::TxTransferEnd => w.cr_utx_end_en().bit(enable),
-        })
+        });
     }
 
     pub fn check_event(&self, event: Event) -> bool {
-        let reader = self.uart.uart_int_sts.read();
+        let reader = self.uart.uart_int_sts().read();
         match event {
             Event::RxFifoError => reader.urx_fer_int().bit_is_set(),
             Event::TxFifoError => reader.utx_fer_int().bit_is_set(),
@@ -312,24 +312,24 @@ where
     }
 
     pub fn clear_event(&self, event: Event) {
-        self.uart.uart_int_clear.write(|w| match event {
+        self.uart.uart_int_clear().write(|w| match event {
             Event::RxParityError => w.cr_urx_pce_clr().set_bit(),
             Event::RxTimeout => w.cr_urx_rto_clr().set_bit(),
             Event::RxTransferEnd => w.cr_urx_end_clr().set_bit(),
             Event::TxTransferEnd => w.cr_utx_end_clr().set_bit(),
             // Other event flags are automatically cleared
             _ => w,
-        })
+        });
     }
 
     /// Get the UART RX status
     pub fn rx_busy(&self) -> bool {
-        self.uart.uart_status.read().sts_urx_bus_busy().bit_is_set()
+        self.uart.uart_status().read().sts_urx_bus_busy().bit_is_set()
     }
 
     /// Get the UART TX status
     pub fn tx_busy(&self) -> bool {
-        self.uart.uart_status.read().sts_utx_bus_busy().bit_is_set()
+        self.uart.uart_status().read().sts_utx_bus_busy().bit_is_set()
     }
 
     pub fn free(self) -> (UART, PINS) {
@@ -352,7 +352,7 @@ macro_rules! uart_dma {
                 }
 
                 fn rx_address_count(&self) -> (u32, u32) {
-                    (self.uart.uart_fifo_rdata.as_ptr() as u32, u32::MAX)
+                    (self.uart.uart_fifo_rdata().as_ptr() as u32, u32::MAX)
                 }
 
                 fn rx_increment(&self) -> bool {
@@ -369,7 +369,7 @@ macro_rules! uart_dma {
                 }
 
                 fn tx_address_count(&mut self) -> (u32, u32) {
-                    (self.uart.uart_fifo_wdata.as_ptr() as u32, u32::MAX)
+                    (self.uart.uart_fifo_wdata().as_ptr() as u32, u32::MAX)
                 }
 
                 fn tx_increment(&self) -> bool {
@@ -381,8 +381,8 @@ macro_rules! uart_dma {
 }
 
 uart_dma! {
-    UART0: (rx: 0, tx: 1),
-    UART1: (rx: 2, tx: 3),
+    Uart0: (rx: 0, tx: 1),
+    Uart1: (rx: 2, tx: 3),
 }
 
 impl<UART, PINS> embedded_hal_nb::serial::ErrorType for Serial<UART, PINS> {
@@ -395,11 +395,11 @@ where
 {
     fn write(&mut self, word: u8) -> nb::Result<(), Self::Error> {
         // If there's no room to write a byte or more to the FIFO, return WouldBlock
-        if self.uart.uart_fifo_config_1.read().tx_fifo_cnt().bits() == 0 {
+        if self.uart.uart_fifo_config_1().read().tx_fifo_cnt().bits() == 0 {
             Err(nb::Error::WouldBlock)
         } else {
             self.uart
-                .uart_fifo_wdata
+                .uart_fifo_wdata()
                 .write(|w| unsafe { w.bits(word as u32) });
             Ok(())
         }
@@ -407,8 +407,8 @@ where
 
     fn flush(&mut self) -> nb::Result<(), Self::Error> {
         // If we're still transmitting or have data in our 32 byte FIFO, return WouldBlock
-        if self.uart.uart_fifo_config_1.read().tx_fifo_cnt().bits() != 32
-            || self.uart.uart_status.read().sts_utx_bus_busy().bit_is_set()
+        if self.uart.uart_fifo_config_1().read().tx_fifo_cnt().bits() != 32
+            || self.uart.uart_status().read().sts_utx_bus_busy().bit_is_set()
         {
             Err(nb::Error::WouldBlock)
         } else {
@@ -422,10 +422,10 @@ where
     UART: Deref<Target = pac::uart0::RegisterBlock>,
 {
     fn read(&mut self) -> nb::Result<u8, Self::Error> {
-        if self.uart.uart_fifo_config_1.read().rx_fifo_cnt().bits() == 0 {
+        if self.uart.uart_fifo_config_1().read().rx_fifo_cnt().bits() == 0 {
             Err(nb::Error::WouldBlock)
         } else {
-            let ans = self.uart.uart_fifo_rdata.read().bits();
+            let ans = self.uart.uart_fifo_rdata().read().bits();
             Ok((ans & 0xff) as u8)
         }
     }
@@ -482,15 +482,15 @@ macro_rules! impl_uart_pin {
     ($(($UartSigi: ident, $UartMuxi: ident),)+) => {
         use crate::gpio::*;
         $(
-        impl<PIN: UartPin<$UartSigi>> TxPin<pac::UART0> for (PIN, $UartMuxi<Uart0Tx>) {}
-        impl<PIN: UartPin<$UartSigi>> RxPin<pac::UART0> for (PIN, $UartMuxi<Uart0Rx>) {}
-        impl<PIN: UartPin<$UartSigi>> RtsPin<pac::UART0> for (PIN, $UartMuxi<Uart0Rts>) {}
-        impl<PIN: UartPin<$UartSigi>> CtsPin<pac::UART0> for (PIN, $UartMuxi<Uart0Cts>) {}
+        impl<PIN: UartPin<$UartSigi>> TxPin<pac::Uart0> for (PIN, $UartMuxi<Uart0Tx>) {}
+        impl<PIN: UartPin<$UartSigi>> RxPin<pac::Uart0> for (PIN, $UartMuxi<Uart0Rx>) {}
+        impl<PIN: UartPin<$UartSigi>> RtsPin<pac::Uart0> for (PIN, $UartMuxi<Uart0Rts>) {}
+        impl<PIN: UartPin<$UartSigi>> CtsPin<pac::Uart0> for (PIN, $UartMuxi<Uart0Cts>) {}
 
-        impl<PIN: UartPin<$UartSigi>> TxPin<pac::UART1> for (PIN, $UartMuxi<Uart1Tx>) {}
-        impl<PIN: UartPin<$UartSigi>> RxPin<pac::UART1> for (PIN, $UartMuxi<Uart1Rx>) {}
-        impl<PIN: UartPin<$UartSigi>> RtsPin<pac::UART1> for (PIN, $UartMuxi<Uart1Rts>) {}
-        impl<PIN: UartPin<$UartSigi>> CtsPin<pac::UART1> for (PIN, $UartMuxi<Uart1Cts>) {}
+        impl<PIN: UartPin<$UartSigi>> TxPin<pac::Uart1> for (PIN, $UartMuxi<Uart1Tx>) {}
+        impl<PIN: UartPin<$UartSigi>> RxPin<pac::Uart1> for (PIN, $UartMuxi<Uart1Rx>) {}
+        impl<PIN: UartPin<$UartSigi>> RtsPin<pac::Uart1> for (PIN, $UartMuxi<Uart1Rts>) {}
+        impl<PIN: UartPin<$UartSigi>> CtsPin<pac::Uart1> for (PIN, $UartMuxi<Uart1Cts>) {}
         )+
     };
 }

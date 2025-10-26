@@ -17,7 +17,7 @@
     ```
 */
 
-use bl602_pac::I2C;
+use bl602_pac::I2c as I2C;
 use embedded_hal::i2c as i2cAlpha;
 use embedded_hal_zero::blocking::i2c::Read as ReadZero;
 use embedded_hal_zero::blocking::i2c::Write as WriteZero;
@@ -66,29 +66,29 @@ pub trait SclPin<I2C>: Sealed {}
 /// I2C pins
 pub trait Pins<I2C>: Sealed {}
 
-impl<MODE> SclPin<pac::I2C> for crate::gpio::Pin0<MODE> {}
-impl<MODE> SdaPin<pac::I2C> for crate::gpio::Pin1<MODE> {}
-impl<MODE> SclPin<pac::I2C> for crate::gpio::Pin2<MODE> {}
-impl<MODE> SdaPin<pac::I2C> for crate::gpio::Pin3<MODE> {}
-impl<MODE> SclPin<pac::I2C> for crate::gpio::Pin4<MODE> {}
-impl<MODE> SdaPin<pac::I2C> for crate::gpio::Pin5<MODE> {}
-impl<MODE> SclPin<pac::I2C> for crate::gpio::Pin6<MODE> {}
-impl<MODE> SdaPin<pac::I2C> for crate::gpio::Pin7<MODE> {}
-impl<MODE> SclPin<pac::I2C> for crate::gpio::Pin8<MODE> {}
-impl<MODE> SdaPin<pac::I2C> for crate::gpio::Pin9<MODE> {}
-impl<MODE> SclPin<pac::I2C> for crate::gpio::Pin10<MODE> {}
-impl<MODE> SdaPin<pac::I2C> for crate::gpio::Pin11<MODE> {}
-impl<MODE> SclPin<pac::I2C> for crate::gpio::Pin12<MODE> {}
-impl<MODE> SdaPin<pac::I2C> for crate::gpio::Pin13<MODE> {}
-impl<MODE> SclPin<pac::I2C> for crate::gpio::Pin14<MODE> {}
-impl<MODE> SdaPin<pac::I2C> for crate::gpio::Pin15<MODE> {}
-impl<MODE> SclPin<pac::I2C> for crate::gpio::Pin16<MODE> {}
-impl<MODE> SdaPin<pac::I2C> for crate::gpio::Pin17<MODE> {}
-impl<MODE> SclPin<pac::I2C> for crate::gpio::Pin18<MODE> {}
-impl<MODE> SdaPin<pac::I2C> for crate::gpio::Pin19<MODE> {}
-impl<MODE> SclPin<pac::I2C> for crate::gpio::Pin20<MODE> {}
-impl<MODE> SdaPin<pac::I2C> for crate::gpio::Pin21<MODE> {}
-impl<MODE> SclPin<pac::I2C> for crate::gpio::Pin22<MODE> {}
+impl<MODE> SclPin<pac::I2c> for crate::gpio::Pin0<MODE> {}
+impl<MODE> SdaPin<pac::I2c> for crate::gpio::Pin1<MODE> {}
+impl<MODE> SclPin<pac::I2c> for crate::gpio::Pin2<MODE> {}
+impl<MODE> SdaPin<pac::I2c> for crate::gpio::Pin3<MODE> {}
+impl<MODE> SclPin<pac::I2c> for crate::gpio::Pin4<MODE> {}
+impl<MODE> SdaPin<pac::I2c> for crate::gpio::Pin5<MODE> {}
+impl<MODE> SclPin<pac::I2c> for crate::gpio::Pin6<MODE> {}
+impl<MODE> SdaPin<pac::I2c> for crate::gpio::Pin7<MODE> {}
+impl<MODE> SclPin<pac::I2c> for crate::gpio::Pin8<MODE> {}
+impl<MODE> SdaPin<pac::I2c> for crate::gpio::Pin9<MODE> {}
+impl<MODE> SclPin<pac::I2c> for crate::gpio::Pin10<MODE> {}
+impl<MODE> SdaPin<pac::I2c> for crate::gpio::Pin11<MODE> {}
+impl<MODE> SclPin<pac::I2c> for crate::gpio::Pin12<MODE> {}
+impl<MODE> SdaPin<pac::I2c> for crate::gpio::Pin13<MODE> {}
+impl<MODE> SclPin<pac::I2c> for crate::gpio::Pin14<MODE> {}
+impl<MODE> SdaPin<pac::I2c> for crate::gpio::Pin15<MODE> {}
+impl<MODE> SclPin<pac::I2c> for crate::gpio::Pin16<MODE> {}
+impl<MODE> SdaPin<pac::I2c> for crate::gpio::Pin17<MODE> {}
+impl<MODE> SclPin<pac::I2c> for crate::gpio::Pin18<MODE> {}
+impl<MODE> SdaPin<pac::I2c> for crate::gpio::Pin19<MODE> {}
+impl<MODE> SclPin<pac::I2c> for crate::gpio::Pin20<MODE> {}
+impl<MODE> SdaPin<pac::I2c> for crate::gpio::Pin21<MODE> {}
+impl<MODE> SclPin<pac::I2c> for crate::gpio::Pin22<MODE> {}
 
 impl<SCL, SDA> Pins<I2C> for (SCL, SDA)
 where
@@ -107,9 +107,9 @@ pub struct I2c<I2C, PINS> {
     timeout: u16,
 }
 
-impl<PINS> I2c<pac::I2C, PINS>
+impl<PINS> I2c<pac::I2c, PINS>
 where
-    PINS: Pins<pac::I2C>,
+    PINS: Pins<pac::I2c>,
 {
     /**
       Constructs an I2C instance in master mode.
@@ -121,7 +121,7 @@ where
     */
     pub fn new(i2c: I2C, pins: PINS, freq: Hertz<u32>, clocks: Clocks) -> Self
     where
-        PINS: Pins<pac::I2C>,
+        PINS: Pins<pac::I2c>,
     {
         // length of phase 0,1,2 and 3
         // needs to be divided by four
@@ -134,7 +134,7 @@ where
 
         let len = (len - 1) as u8;
 
-        i2c.i2c_prd_start.modify(|_r, w| unsafe {
+        i2c.i2c_prd_start().modify(|_r, w| unsafe {
             w.cr_i2c_prd_s_ph_0()
                 .bits(len)
                 .cr_i2c_prd_s_ph_1()
@@ -145,7 +145,7 @@ where
                 .bits(len)
         });
 
-        i2c.i2c_prd_stop.modify(|_r, w| unsafe {
+        i2c.i2c_prd_stop().modify(|_r, w| unsafe {
             w.cr_i2c_prd_p_ph_0()
                 .bits(len)
                 .cr_i2c_prd_p_ph_1()
@@ -156,7 +156,7 @@ where
                 .bits(len)
         });
 
-        i2c.i2c_prd_data.modify(|_r, w| unsafe {
+        i2c.i2c_prd_data().modify(|_r, w| unsafe {
             w.cr_i2c_prd_d_ph_0()
                 .bits(len)
                 .cr_i2c_prd_d_ph_1()
@@ -174,7 +174,7 @@ where
         }
     }
 
-    pub fn release(self) -> (pac::I2C, PINS) {
+    pub fn release(self) -> (pac::I2c, PINS) {
         (self.i2c, self.pins)
     }
 
@@ -187,34 +187,34 @@ where
     /// Clear FIFOs
     pub fn clear_fifo(&mut self) {
         self.i2c
-            .i2c_fifo_config_0
+            .i2c_fifo_config_0()
             .write(|w| w.rx_fifo_clr().set_bit().tx_fifo_clr().set_bit());
     }
 }
 
-impl<PINS> i2cAlpha::ErrorType for I2c<pac::I2C, PINS> {
+impl<PINS> i2cAlpha::ErrorType for I2c<pac::I2c, PINS> {
     type Error = Error;
 }
 
-impl<PINS> i2cAlpha::I2c<i2cAlpha::SevenBitAddress> for I2c<pac::I2C, PINS>
+impl<PINS> i2cAlpha::I2c<i2cAlpha::SevenBitAddress> for I2c<pac::I2c, PINS>
 where
-    PINS: Pins<pac::I2C>,
+    PINS: Pins<pac::I2c>,
 {
     fn read(
         &mut self,
         address: i2cAlpha::SevenBitAddress,
         buffer: &mut [u8],
     ) -> Result<(), Self::Error> {
-        let fifo_config = self.i2c.i2c_fifo_config_0.read();
+        let fifo_config = self.i2c.i2c_fifo_config_0().read();
 
         if fifo_config.rx_fifo_overflow().bit_is_set() {
             self.i2c
-                .i2c_fifo_config_0
+                .i2c_fifo_config_0()
                 .write(|w| w.rx_fifo_clr().set_bit());
             return Err(Error::RxOverflow);
         } else if fifo_config.rx_fifo_underflow().bit_is_set() {
             self.i2c
-                .i2c_fifo_config_0
+                .i2c_fifo_config_0()
                 .write(|w| w.rx_fifo_clr().set_bit());
             return Err(Error::RxUnderflow);
         }
@@ -223,7 +223,7 @@ where
         let mut word_buffer = [0u32; 255];
         let tmp = &mut word_buffer[..count];
 
-        self.i2c.i2c_config.modify(|_r, w| unsafe {
+        self.i2c.i2c_config().modify(|_r, w| unsafe {
             w.cr_i2c_pkt_len()
                 .bits(buffer.len() as u8 - 1u8)
                 .cr_i2c_slv_addr()
@@ -245,16 +245,16 @@ where
         let mut delay = McycleDelay::new(192_000_000);
         for value in tmp.iter_mut() {
             let start_time = McycleDelay::get_cycle_count();
-            while self.i2c.i2c_fifo_config_1.read().rx_fifo_cnt().bits() == 0 {
+            while self.i2c.i2c_fifo_config_1().read().rx_fifo_cnt().bits() == 0 {
                 if delay.us_since(start_time) > self.timeout.into() {
                     return Err(Error::Timeout);
                 }
             }
-            *value = self.i2c.i2c_fifo_rdata.read().i2c_fifo_rdata().bits();
+            *value = self.i2c.i2c_fifo_rdata().read().i2c_fifo_rdata().bits();
         }
 
         self.i2c
-            .i2c_config
+            .i2c_config()
             .modify(|_r, w| w.cr_i2c_m_en().clear_bit());
 
         for (idx, value) in buffer.iter_mut().enumerate() {
@@ -270,16 +270,16 @@ where
         address: i2cAlpha::SevenBitAddress,
         buffer: &[u8],
     ) -> Result<(), Self::Error> {
-        let fifo_config = self.i2c.i2c_fifo_config_0.read();
+        let fifo_config = self.i2c.i2c_fifo_config_0().read();
 
         if fifo_config.tx_fifo_overflow().bit_is_set() {
             self.i2c
-                .i2c_fifo_config_0
+                .i2c_fifo_config_0()
                 .write(|w| w.tx_fifo_clr().set_bit());
             return Err(Error::TxOverflow);
         } else if fifo_config.tx_fifo_underflow().bit_is_set() {
             self.i2c
-                .i2c_fifo_config_0
+                .i2c_fifo_config_0()
                 .write(|w| w.tx_fifo_clr().set_bit());
             return Err(Error::TxUnderflow);
         }
@@ -292,7 +292,7 @@ where
         }
         let tmp = &word_buffer[..count];
 
-        self.i2c.i2c_config.modify(|_r, w| unsafe {
+        self.i2c.i2c_config().modify(|_r, w| unsafe {
             w.cr_i2c_pkt_len()
                 .bits(buffer.len() as u8 - 1u8)
                 .cr_i2c_slv_addr()
@@ -314,18 +314,18 @@ where
         let mut delay = McycleDelay::new(192_000_000);
         for value in tmp.iter() {
             let start_time = McycleDelay::get_cycle_count();
-            while self.i2c.i2c_fifo_config_1.read().tx_fifo_cnt().bits() == 0 {
+            while self.i2c.i2c_fifo_config_1().read().tx_fifo_cnt().bits() == 0 {
                 if delay.us_since(start_time) > self.timeout.into() {
                     return Err(Error::Timeout);
                 }
             }
             self.i2c
-                .i2c_fifo_wdata
+                .i2c_fifo_wdata()
                 .write(|w| unsafe { w.i2c_fifo_wdata().bits(*value) });
         }
 
         let start_time = McycleDelay::get_cycle_count();
-        while self.i2c.i2c_fifo_config_1.read().tx_fifo_cnt().bits() < 2 {
+        while self.i2c.i2c_fifo_config_1().read().tx_fifo_cnt().bits() < 2 {
             // wait for write fifo to be empty
             if delay.us_since(start_time) > self.timeout.into() {
                 return Err(Error::Timeout);
@@ -333,7 +333,7 @@ where
         }
 
         let start_time = McycleDelay::get_cycle_count();
-        while self.i2c.i2c_bus_busy.read().sts_i2c_bus_busy().bit_is_set() {
+        while self.i2c.i2c_bus_busy().read().sts_i2c_bus_busy().bit_is_set() {
             // wait for transfer to finish
             if delay.us_since(start_time) > self.timeout.into() {
                 return Err(Error::Timeout);
@@ -341,7 +341,7 @@ where
         }
 
         self.i2c
-            .i2c_config
+            .i2c_config()
             .modify(|_r, w| w.cr_i2c_m_en().clear_bit());
 
         Ok(())
@@ -358,9 +358,9 @@ where
     }
 }
 
-impl<PINS> ReadZero for I2c<pac::I2C, PINS>
+impl<PINS> ReadZero for I2c<pac::I2c, PINS>
 where
-    PINS: Pins<pac::I2C>,
+    PINS: Pins<pac::I2c>,
 {
     type Error = Error;
 
@@ -369,9 +369,9 @@ where
     }
 }
 
-impl<PINS> WriteZero for I2c<pac::I2C, PINS>
+impl<PINS> WriteZero for I2c<pac::I2c, PINS>
 where
-    PINS: Pins<pac::I2C>,
+    PINS: Pins<pac::I2c>,
 {
     type Error = Error;
 
@@ -384,7 +384,7 @@ where
 mod private {
     use super::{SclPin, SdaPin};
     use crate::gpio;
-    use bl602_pac::I2C;
+    use bl602_pac::I2c as I2C;
 
     pub trait Sealed {}
     impl<SCL, SDA> Sealed for (SCL, SDA)

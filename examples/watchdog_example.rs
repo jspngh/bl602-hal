@@ -53,7 +53,7 @@ static G_LED_TIMER: Mutex<RefCell<Option<WatchdogTimer>>> = Mutex::new(RefCell::
 fn main() -> ! {
     //take control of the device peripherals:
     let dp = pac::Peripherals::take().unwrap();
-    let mut gpio_pins = dp.GLB.split();
+    let mut gpio_pins = dp.glb.split();
 
     // Set up all the clocks we need
     let clocks = Strict::new()
@@ -71,7 +71,7 @@ fn main() -> ! {
 
     // Configure our UART to 2MBaud, and use the pins we configured above
     let mut serial = Serial::new(
-        dp.UART0,
+        dp.uart0,
         Config::default().baudrate(2_000_000.Bd()),
         ((pin16, mux0), (pin7, mux7)),
         clocks,
@@ -85,7 +85,7 @@ fn main() -> ! {
     let mut d = bl602_hal::delay::McycleDelay::new(clocks.sysclk().0);
 
     // Set up the watchdog timer to the slowest tick rate possible:
-    let timers = dp.TIMER.split();
+    let timers = dp.timer.split();
     let mut watchdog = timers
         .watchdog
         .set_clock_source(WdtClockSource::Rc32Khz, 125.Hz());

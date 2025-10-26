@@ -44,7 +44,7 @@ static G_LED_TIMER: Mutex<RefCell<Option<LedTimer>>> = Mutex::new(RefCell::new(N
 fn main() -> ! {
     // Setup the device peripherals:
     let dp = pac::Peripherals::take().unwrap();
-    let mut glb = dp.GLB.split();
+    let mut glb = dp.glb.split();
 
     // Set up all the clocks we need:
     let clocks = Strict::new()
@@ -63,7 +63,7 @@ fn main() -> ! {
     let _ = g_led_pin.set_high();
 
     // Initialize TimerCh0 to increment its count at a rate of 160MHz:
-    let timers = dp.TIMER.split();
+    let timers = dp.timer.split();
     let timer_ch0 = timers
         .channel0
         .set_clock_source(ClockSource::Fclk(&clocks), 160_000_000_u32.Hz());

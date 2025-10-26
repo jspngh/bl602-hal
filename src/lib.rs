@@ -12,7 +12,7 @@
 //! ```rust
 //! // Get access to the device specific peripherals from the peripheral access crate
 //! let dp = pac::Peripherals::take().unwrap();
-//! let mut parts = dp.GLB.split();
+//! let mut parts = dp.glb.split();
 //!
 //! // Freeze the configuration of all the clocks in the system and store the frozen frequencies in
 //! // `clocks`

@@ -5,20 +5,20 @@ use core::convert::TryFrom;
 /// Trait which implements low-level functionality for transfers using a single DMA channel.
 pub trait SingleChannel: Sealed {
     /// Returns the registers associated with this DMA channel.
-    fn ch(&self) -> &crate::pac::dma::CH;
+    fn ch(&self) -> &crate::pac::dma::Ch;
     /// Returns the index of the DMA channel.
     fn id(&self) -> u8;
 
     /// Enables the terminal count signal for this channel.
     fn listen_tc_irq(&mut self) {
-        self.ch().ch_config.modify(|_, w| {
+        self.ch().ch_config().modify(|_, w| {
             w.itc().clear_bit() // unmask terminal count interrupt
         });
     }
 
     /// Disables the terminal count signal for this channel.
     fn unlisten_tc_irq(&mut self) {
-        self.ch().ch_config.modify(|_, w| {
+        self.ch().ch_config().modify(|_, w| {
             w.itc().set_bit() // mask terminal count interrupt
         });
     }
@@ -28,11 +28,11 @@ pub trait SingleChannel: Sealed {
     fn check_tc_irq(&mut self) -> bool {
         // Safety: ...
         unsafe {
-            let status = (*crate::pac::DMA::ptr()).dma_int_tcstatus.read().bits();
+            let status = (*crate::pac::Dma::ptr()).dma_int_tcstatus().read().bits();
             if (status & (1 << self.id())) != 0 {
                 // Clear the interrupt.
-                (*crate::pac::DMA::ptr())
-                    .dma_int_tcclear
+                (*crate::pac::Dma::ptr())
+                    .dma_int_tcclear()
                     .write(|w| w.int_tcclear().bits(1 << self.id()));
                 true
             } else {
@@ -43,14 +43,14 @@ pub trait SingleChannel: Sealed {
 
     /// Enables the error signal for this channel.
     fn listen_err_irq(&mut self) {
-        self.ch().ch_config.modify(|_, w| {
+        self.ch().ch_config().modify(|_, w| {
             w.ie().clear_bit() // unmask error interrupt
         });
     }
 
     /// Disables the error signal for this channel.
     fn unlisten_err_irq(&mut self) {
-        self.ch().ch_config.modify(|_, w| {
+        self.ch().ch_config().modify(|_, w| {
             w.ie().set_bit() // mask error interrupt
         });
     }
@@ -60,12 +60,12 @@ pub trait SingleChannel: Sealed {
     fn check_err_irq(&mut self) -> bool {
         // Safety: ...
         unsafe {
-            let status = (*crate::pac::DMA::ptr()).dma_int_error_status.read().bits();
+            let status = (*crate::pac::Dma::ptr()).dma_int_error_status().read().bits();
             // TODO: figure out which bit gets set
             if (status & (1 << self.id())) != 0 {
                 // Clear the interrupt.
-                (*crate::pac::DMA::ptr())
-                    .dma_int_err_clr
+                (*crate::pac::Dma::ptr())
+                    .dma_int_err_clr()
                     .write(|w| w.int_err_clr().bits(1 << self.id()));
                 true
             } else {
@@ -76,7 +76,7 @@ pub trait SingleChannel: Sealed {
 
     /// Get the number of data transfers that (still) need to be done.
     fn transfer_size(&self) -> usize {
-        self.ch().ch_control.read().transfer_size().bits().into()
+        self.ch().ch_control().read().transfer_size().bits().into()
     }
 }
 
@@ -84,7 +84,7 @@ impl<CH: ChannelIndex> SingleChannel for Channel<CH>
 where
     Channel<CH>: ChannelRegs,
 {
-    fn ch(&self) -> &crate::pac::dma::CH {
+    fn ch(&self) -> &crate::pac::dma::Ch {
         self.regs()
     }
 
@@ -160,49 +160,49 @@ impl<CH: SingleChannel> ChannelConfig for CH {
             (Some(s), Some(d)) => (s, d, 0b011),
         };
 
-        self.ch().ch_config.modify(|_, w| w.e().clear_bit());
+        self.ch().ch_config().modify(|_, w| w.e().clear_bit());
         #[rustfmt::skip]
-        self.ch().ch_control.write(|w| {
-            w.transfer_size().variant(len)
-             .sbsize().variant(0) // increment 1 byte
-             .dbsize().variant(0) // increment 1 byte
-             .swidth().variant(0) // 8-bit width
-             .dwidth().variant(0) // 8-bit width
+        self.ch().ch_control().write(|w| unsafe {
+            w.transfer_size().bits(len)
+             .sbsize().bits(0) // increment 1 byte
+             .dbsize().bits(0) // increment 1 byte
+             .swidth().bits(0) // 8-bit width
+             .dwidth().bits(0) // 8-bit width
              .si().bit(src_incr)
              .di().bit(dst_incr)
-             .prot().variant(0)   // TODO: when would you need this?
+             .prot().bits(0)   // TODO: when would you need this?
              .i().set_bit()
         });
         #[rustfmt::skip]
-        self.ch().ch_config.modify(|_, w| {
-            w.src_peripheral().variant(srcph)
-             .dst_peripheral().variant(dstph)
-             .flow_cntrl().variant(flowctrl)
+        self.ch().ch_config().modify(|_, w| unsafe {
+            w.src_peripheral().bits(srcph)
+             .dst_peripheral().bits(dstph)
+             .flow_cntrl().bits(flowctrl)
              .itc().clear_bit() // mask terminal count interrupt
              .ie().set_bit() // mask error interrupt
         });
 
         // set source and destination address
         self.ch()
-            .ch_src_addr
+            .ch_src_addr()
             .write(|w| unsafe { w.src_addr().bits(src) });
         self.ch()
-            .ch_dst_addr
+            .ch_dst_addr()
             .write(|w| unsafe { w.dst_addr().bits(dst) });
 
         // clear interrupt status
-        let dma = unsafe { &*crate::pac::DMA::ptr() };
-        dma.dma_int_tcclear
-            .write(|w| w.int_tcclear().variant(1 << self.id()));
-        dma.dma_int_err_clr
-            .write(|w| w.int_err_clr().variant(1 << self.id()));
+        let dma = unsafe { &*crate::pac::Dma::ptr() };
+        dma.dma_int_tcclear()
+            .write(|w| unsafe { w.int_tcclear().bits(1 << self.id()) });
+        dma.dma_int_err_clr()
+            .write(|w| unsafe { w.int_err_clr().bits(1 << self.id()) });
     }
 
     fn start(&mut self) {
-        self.ch().ch_config.modify(|_, w| w.e().set_bit());
+        self.ch().ch_config().modify(|_, w| w.e().set_bit());
     }
 
     fn is_enabled(&self) -> bool {
-        self.ch().ch_config.read().e().bit_is_set()
+        self.ch().ch_config().read().e().bit_is_set()
     }
 }

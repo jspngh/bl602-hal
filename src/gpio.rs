@@ -120,9 +120,9 @@ pub mod uart_sig {
                 paste::paste! {
                     #[inline]
                     fn into_uart_mode<T>(self, mode: u8) -> $UartMuxi<T> {
-                        let glb = unsafe { &*pac::GLB::ptr() };
+                        let glb = unsafe { &*pac::Glb::ptr() };
 
-                        glb.uart_sig_sel_0.modify(|_r, w| unsafe { w
+                        glb.uart_sig_sel_0().modify(|_r, w| unsafe { w
                             .[<uart_ $sigi _sel>]().bits(mode)
                         });
 
@@ -245,7 +245,7 @@ pub use self::pin::*;
 
 macro_rules! impl_glb {
     ($($Pini: ident: ($pini: ident, $gpio_cfgctli: ident, $UartSigi: ident, $sigi: ident, $spi_kind: ident, $i2c_kind: ident, $gpio_i: ident, $gpio_int_mode_seti: ident) ,)+) => {
-        impl GlbExt for pac::GLB {
+        impl GlbExt for pac::Glb {
             fn split(self) -> Parts {
                 Parts {
                     $( $pini: $Pini { _mode: PhantomData }, )+
@@ -349,9 +349,9 @@ macro_rules! impl_glb {
                 paste::paste! {
                     #[inline]
                     fn into_pin_with_mode<T>(self, mode: u8, pu: bool, pd: bool, ie: bool) -> $Pini<T> {
-                        let glb = unsafe { &*pac::GLB::ptr() };
+                        let glb = unsafe { &*pac::Glb::ptr() };
 
-                        glb.$gpio_cfgctli.modify(|_r, w| unsafe { w
+                        glb.$gpio_cfgctli().modify(|_r, w| unsafe { w
                             .[<reg_ $gpio_i _func_sel>]().bits(mode)
                             .[<reg_ $gpio_i _ie>]().bit(ie) // output
                             .[<reg_ $gpio_i _pu>]().bit(pu)
@@ -361,7 +361,7 @@ macro_rules! impl_glb {
                         });
 
                         // If we're an input clear the Output Enable bit as well, else set it.
-                        glb.gpio_cfgctl34.modify(|_, w| w.[<reg_ $gpio_i _oe>]().bit(!ie));
+                        glb.gpio_cfgctl34().modify(|_, w| w.[<reg_ $gpio_i _oe>]().bit(!ie));
 
                         $Pini { _mode: PhantomData }
                     }
@@ -372,16 +372,16 @@ macro_rules! impl_glb {
                 paste::paste! {
                     /// Enable smitter GPIO input filter
                     pub fn enable_smitter(&mut self) {
-                        let glb = unsafe { &*pac::GLB::ptr() };
+                        let glb = unsafe { &*pac::Glb::ptr() };
 
-                        glb.$gpio_cfgctli.modify(|_, w| w.[<reg_ $gpio_i _smt>]().set_bit());
+                        glb.$gpio_cfgctli().modify(|_, w| w.[<reg_ $gpio_i _smt>]().set_bit());
                     }
 
                     /// Enable smitter GPIO output filter
                     pub fn disable_smitter(&mut self) {
-                        let glb = unsafe { &*pac::GLB::ptr() };
+                        let glb = unsafe { &*pac::Glb::ptr() };
 
-                        glb.$gpio_cfgctli.modify(|_, w| w.[<reg_ $gpio_i _smt>]().clear_bit());
+                        glb.$gpio_cfgctli().modify(|_, w| w.[<reg_ $gpio_i _smt>]().clear_bit());
                     }
                 }
             }
@@ -413,14 +413,14 @@ macro_rules! impl_glb {
             impl<MODE> InternalInputPinImpl for $Pini<Input<MODE>> {
                 paste::paste! {
                     fn is_high_inner(&self) -> bool {
-                        let glb = unsafe { &*pac::GLB::ptr() };
-                        glb.gpio_cfgctl30.read().[<reg_ $gpio_i _i>]().bit_is_set()
+                        let glb = unsafe { &*pac::Glb::ptr() };
+                        glb.gpio_cfgctl30().read().[<reg_ $gpio_i _i>]().bit_is_set()
                     }
                 }
                 paste::paste! {
                     fn is_low_inner(&self) -> bool {
-                        let glb = unsafe { &*pac::GLB::ptr() };
-                        glb.gpio_cfgctl30.read().[<reg_ $gpio_i _i>]().bit_is_clear()
+                        let glb = unsafe { &*pac::Glb::ptr() };
+                        glb.gpio_cfgctl30().read().[<reg_ $gpio_i _i>]().bit_is_clear()
                     }
                 }
             }
@@ -428,14 +428,14 @@ macro_rules! impl_glb {
             impl<MODE> InternalOutputPinImp for $Pini<Output<MODE>> {
                 paste::paste! {
                     fn set_high_inner(&self) {
-                        let glb = unsafe { &*pac::GLB::ptr() };
-                        glb.gpio_cfgctl32.modify(|_, w| w.[<reg_ $gpio_i _o>]().set_bit())
+                        let glb = unsafe { &*pac::Glb::ptr() };
+                        glb.gpio_cfgctl32().modify(|_, w| w.[<reg_ $gpio_i _o>]().set_bit());
                     }
                 }
                 paste::paste! {
                     fn set_low_inner(&self)  {
-                        let glb = unsafe { &*pac::GLB::ptr() };
-                        glb.gpio_cfgctl32.modify(|_, w| w.[<reg_ $gpio_i _o>]().clear_bit())
+                        let glb = unsafe { &*pac::Glb::ptr() };
+                        glb.gpio_cfgctl32().modify(|_, w| w.[<reg_ $gpio_i _o>]().clear_bit());
                     }
                 }
             }
@@ -443,13 +443,13 @@ macro_rules! impl_glb {
             impl<MODE> InternalStatefulOutputImp for $Pini<Output<MODE>> {
                 paste::paste! {
                     fn is_output_high_inner(&self) -> bool {
-                        let glb = unsafe { &*pac::GLB::ptr() };
-                        glb.gpio_cfgctl32.read().[<reg_ $gpio_i _o>]().bit_is_set()
+                        let glb = unsafe { &*pac::Glb::ptr() };
+                        glb.gpio_cfgctl32().read().[<reg_ $gpio_i _o>]().bit_is_set()
                     }
 
                     fn is_output_low_inner(& self) -> bool {
-                        let glb = unsafe { &*pac::GLB::ptr() };
-                        glb.gpio_cfgctl32.read().[<reg_ $gpio_i _o>]().bit_is_clear()
+                        let glb = unsafe { &*pac::Glb::ptr() };
+                        glb.gpio_cfgctl32().read().[<reg_ $gpio_i _o>]().bit_is_clear()
                     }
                 }
             }
@@ -484,57 +484,57 @@ macro_rules! impl_glb {
 
                 paste::paste! {
                     fn trigger_on_event(&mut self, event: Event) {
-                        let glb = unsafe { &*pac::GLB::ptr() };
+                        let glb = unsafe { &*pac::Glb::ptr() };
 
-                        glb.$gpio_int_mode_seti.modify(|_, w| { w
-                                                                .[<reg_ $gpio_i _interrupt_trigger_mode>]().bits(event as u8)
+                        glb.$gpio_int_mode_seti().modify(|_, w| unsafe {
+                            w.[<reg_ $gpio_i _interrupt_trigger_mode>]().bits(event as u8)
                         });
                     }
 
                     fn control_asynchronous(&mut self) {
-                        let glb = unsafe { &*pac::GLB::ptr() };
+                        let glb = unsafe { &*pac::Glb::ptr() };
 
-                        glb.$gpio_int_mode_seti.modify(|_, w| { w
-                                                                .[<reg_ $gpio_i _interrupt_control_mode>]().asynchronous()
+                        glb.$gpio_int_mode_seti().modify(|_, w| {
+                            w.[<reg_ $gpio_i _interrupt_control_mode>]().asynchronous()
                         });
                     }
 
                     fn control_synchronous(&mut self) {
-                        let glb = unsafe { &*pac::GLB::ptr() };
+                        let glb = unsafe { &*pac::Glb::ptr() };
 
-                        glb.$gpio_int_mode_seti.modify(|_, w| { w
-                                                                .[<reg_ $gpio_i _interrupt_control_mode>]().synchronous()
+                        glb.$gpio_int_mode_seti().modify(|_, w| {
+                            w.[<reg_ $gpio_i _interrupt_control_mode>]().synchronous()
                         });
                     }
 
                     fn enable_interrupt(&mut self) {
-                        let glb = unsafe { &*pac::GLB::ptr() };
+                        let glb = unsafe { &*pac::Glb::ptr() };
 
-                        glb.gpio_int_mask1.modify(|_, w| { w
-                                                           .[<reg_ $gpio_i _mask>]().unmasked()
+                        glb.gpio_int_mask1().modify(|_, w| {
+                            w.[<reg_ $gpio_i _mask>]().unmasked()
                         });
                     }
 
                     fn disable_interrupt(&mut self) {
-                        let glb = unsafe { &*pac::GLB::ptr() };
+                        let glb = unsafe { &*pac::Glb::ptr() };
 
-                        glb.gpio_int_mask1.modify(|_, w| { w
-                                                           .[<reg_ $gpio_i _mask>]().masked()
+                        glb.gpio_int_mask1().modify(|_, w| {
+                            w.[<reg_ $gpio_i _mask>]().masked()
                         });
                     }
 
                     fn clear_interrupt_pending_bit(&mut self) {
-                        let glb = unsafe { &*pac::GLB::ptr() };
+                        let glb = unsafe { &*pac::Glb::ptr() };
 
-                        glb.gpio_int_clr1.modify(|_, w| { w
-                                                          .[<reg_ $gpio_i _interrupt_clear>]().clear_bit()
+                        glb.gpio_int_clr1().modify(|_, w| {
+                            w.[<reg_ $gpio_i _interrupt_clear>]().clear_bit()
                         });
                     }
 
                     fn check_interrupt(&self) -> bool {
-                        let glb = unsafe { &*pac::GLB::ptr() };
+                        let glb = unsafe { &*pac::Glb::ptr() };
 
-                        glb.gpio_int_stat1.read().[<reg_ $gpio_i _interrupt_status>]().is_set()
+                        glb.gpio_int_stat1().read().[<reg_ $gpio_i _interrupt_status>]().is_set()
                     }
                 }
             }

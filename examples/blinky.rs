@@ -14,7 +14,7 @@ use panic_halt as _;
 #[riscv_rt::entry]
 fn main() -> ! {
     let dp = pac::Peripherals::take().unwrap();
-    let mut parts = dp.GLB.split();
+    let mut parts = dp.glb.split();
 
     // Set up all the clocks we need
     let clocks = Strict::new()

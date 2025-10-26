@@ -15,7 +15,7 @@ use panic_halt as _;
 #[riscv_rt::entry]
 fn main() -> ! {
     let dp = pac::Peripherals::take().unwrap();
-    let mut parts = dp.GLB.split();
+    let mut parts = dp.glb.split();
 
     // Set up all the clocks we need
     let clocks = Strict::new()
@@ -33,7 +33,7 @@ fn main() -> ! {
 
     // Configure our UART to 115200Baud, and use the pins we configured above
     let mut serial = Serial::new(
-        dp.UART0,
+        dp.uart0,
         Config::default().baudrate(115_200.Bd()),
         ((pin16, mux0), (pin7, mux7)),
         clocks,
